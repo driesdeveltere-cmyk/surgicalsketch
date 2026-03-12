@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SurgicalSketch v2</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Syne+Mono&family=Syne:wght@400;500;700&display=swap');
+
+:root {
+  --bg:           #0b0d11;
+  --surface:      #111318;
+  --surface2:     #161920;
+  --border:       #1c2028;
+  --border2:      #262d38;
+  --text:         #ddd8ce;
+  --text-mid:     #7a8795;
+  --text-dim:     #3d4855;
+  --accent:       #c8a84a;
+  --accent-glow:  rgba(200,168,74,0.15);
+  --red:    #d94f4f;
+  --yellow: #e8c547;
+  --blue:   #4fa8d9;
+  --purple: #9b6dd4;
+  --orange: #d97840;
+  --teal:   #4dc8a0;
+  --indigo: #6880d4;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;}
+
+/* ─── LAYOUT ──────────────────────────────────────── */
+#app{display:flex;flex-direction:column;height:100vh;}
+
+/* TOP BAR */
+#topbar{
+  height:50px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;border-bottom:1px solid var(--border);
+  background:var(--surface);flex-shrink:0;z-index:20;
+}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-mark{
+  width:28px;height:28px;border-radius:4px;
+  background:linear-gradient(135deg,#c8a84a,#e8d080);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Crimson Pro',serif;font-weight:600;font-size:14px;color:#0b0d11;
+}
+.logo-text{font-family:'Crimson Pro',serif;font-size:18px;font-weight:600;letter-spacing:0.02em;}
+.logo-sub{font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-dim);margin-top:1px;}
+
+.topbar-center{display:flex;gap:4px;}
+.mode-btn{
+  padding:5px 14px;border-radius:3px;border:1px solid var(--border2);
+  background:transparent;color:var(--text-mid);font-family:'Syne',sans-serif;
+  font-size:10px;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;
+  transition:all 0.18s;
+}
+.mode-btn:hover{border-color:var(--accent);color:var(--accent);}
+.mode-btn.active{background:var(--accent-glow);border-color:var(--accent);color:var(--accent);}
+
+.top-actions{display:flex;gap:6px;align-items:center;}
+.tbtn{
+  padding:5px 12px;border-radius:3px;border:1px solid var(--border2);
+  background:transparent;color:var(--text-mid);font-family:'Syne',sans-serif;
+  font-size:10px;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:all 0.18s;
+}
+.tbtn:hover{border-color:var(--border2);color:var(--text);background:rgba(255,255,255,0.04);}
+.tbtn-gold{background:var(--accent);border-color:var(--accent);color:#0b0d11;font-weight:700;}
+.tbtn-gold:hover{background:#ddb84a;border-color:#ddb84a;color:#0b0d11;}
+
+/* WORKSPACE */
+#workspace{flex:1;display:flex;overflow:hidden;}
+
+/* LEFT TOOLBAR */
+#toolbar{
+  width:52px;background:var(--surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:3px;flex-shrink:0;
+}
+.tbtn2{
+  width:36px;height:36px;border-radius:5px;background:transparent;border:none;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  color:var(--text-dim);transition:all 0.15s;
+}
+.tbtn2:hover{background:rgba(255,255,255,0.05);color:var(--text-mid);}
+.tbtn2.active{background:var(--accent-glow);color:var(--accent);}
+.tbtn2 svg{width:16px;height:16px;}
+.tsep{width:24px;height:1px;background:var(--border);margin:5px 0;}
+
+/* PANELS */
+#panels{flex:1;display:grid;grid-template-columns:1fr 1fr;overflow:hidden;}
+.panel{display:flex;flex-direction:column;overflow:hidden;position:relative;}
+#panel-photo{border-right:1px solid var(--border);}
+
+.panel-header{
+  height:34px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 14px;border-bottom:1px solid var(--border);
+  background:rgba(0,0,0,0.3);flex-shrink:0;
+}
+.ph-title{font-size:9px;letter-spacing:0.22em;text-transform:uppercase;color:var(--text-dim);}
+.ph-badge{
+  font-size:9px;letter-spacing:0.1em;padding:2px 8px;border-radius:2px;
+  background:rgba(255,255,255,0.04);color:var(--text-dim);border:1px solid var(--border);
+  font-family:'Syne Mono',monospace;
+}
+.ph-badge.active{background:var(--accent-glow);border-color:rgba(200,168,74,0.3);color:var(--accent);}
+
+.canvas-wrap{flex:1;position:relative;overflow:hidden;background:#080a0e;display:flex;align-items:center;justify-content:center;}
+canvas{position:absolute;top:0;left:0;}
+
+/* UPLOAD */
+#upload-zone{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:14px;z-index:5;
+  background:radial-gradient(ellipse at 50% 60%,#0f1218 0%,#080a0e 100%);
+}
+#upload-zone.hidden{display:none;}
+.upload-ring{
+  width:72px;height:72px;border-radius:50%;border:1px dashed var(--border2);
+  display:flex;align-items:center;justify-content:center;color:var(--text-dim);
+  transition:all 0.2s;
+}
+#upload-zone:hover .upload-ring,.upload-ring.over{border-color:var(--accent);color:var(--accent);}
+.upload-txt{font-size:11px;color:var(--text-dim);letter-spacing:0.08em;text-align:center;line-height:1.8;}
+.upload-txt span{color:var(--accent);cursor:pointer;}
+#file-input{display:none;}
+
+/* SIDEBAR */
+#sidebar{
+  width:210px;background:var(--surface);border-left:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;
+}
+.ss{padding:12px 14px;border-bottom:1px solid var(--border);}
+.sl{font-size:9px;letter-spacing:0.22em;text-transform:uppercase;color:var(--text-dim);margin-bottom:9px;}
+
+/* Structure list */
+.si{
+  display:flex;align-items:center;gap:8px;padding:5px 7px;border-radius:3px;
+  cursor:pointer;border:1px solid transparent;transition:all 0.15s;
+  font-size:11px;color:var(--text-mid);letter-spacing:0.03em;
+}
+.si:hover{background:rgba(255,255,255,0.03);}
+.si.active{background:rgba(255,255,255,0.06);border-color:var(--border2);color:var(--text);}
+.si-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+
+/* Size */
+.sz-row{display:flex;gap:5px;}
+.sz-btn{
+  width:30px;height:26px;border-radius:3px;border:1px solid var(--border);
+  background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  color:var(--text-dim);font-family:'Syne',sans-serif;font-size:10px;transition:all 0.15s;
+}
+.sz-btn:hover,.sz-btn.active{border-color:var(--accent);color:var(--accent);background:var(--accent-glow);}
+
+/* Annotations */
+#ann-list{flex:1;overflow-y:auto;}
+.ai{
+  display:flex;align-items:center;gap:7px;padding:8px 14px;
+  border-bottom:1px solid rgba(255,255,255,0.025);font-size:11px;color:var(--text-mid);
+  transition:background 0.1s;cursor:default;
+}
+.ai:hover{background:rgba(255,255,255,0.025);}
+.ai-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.ai-name{flex:1;letter-spacing:0.03em;}
+.ai-del{opacity:0;font-size:15px;color:var(--text-dim);cursor:pointer;transition:opacity 0.1s;line-height:1;}
+.ai:hover .ai-del{opacity:1;}
+
+/* RIGHT PANEL STATES */
+#schema-wrap{background:#080a0e;}
+#right-hint{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:12px;
+  color:var(--text-dim);font-size:11px;letter-spacing:0.1em;
+  text-align:center;line-height:1.9;pointer-events:none;z-index:2;
+}
+#right-hint svg{opacity:0.1;margin-bottom:4px;}
+#right-hint.hidden{display:none;}
+
+/* AI loading overlay */
+#ai-loading{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:16px;
+  background:rgba(8,10,14,0.92);z-index:10;display:none;
+}
+#ai-loading.visible{display:flex;}
+.spinner{
+  width:40px;height:40px;border-radius:50%;
+  border:1.5px solid var(--border2);border-top-color:var(--accent);
+  animation:spin 0.8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+.ai-status{font-size:11px;letter-spacing:0.12em;color:var(--text-mid);text-align:center;max-width:240px;line-height:1.7;}
+
+/* Label overlay */
+#label-overlay{
+  display:none;position:fixed;z-index:100;
+  background:var(--surface2);border:1px solid var(--border2);
+  border-radius:4px;padding:9px 12px;box-shadow:0 12px 40px rgba(0,0,0,0.6);min-width:190px;
+}
+#label-overlay.visible{display:block;}
+#label-input{
+  background:transparent;border:none;outline:none;
+  color:var(--text);font-family:'Syne',sans-serif;font-size:13px;width:100%;letter-spacing:0.04em;
+}
+#label-input::placeholder{color:var(--text-dim);}
+.lhint{font-size:9px;color:var(--text-dim);letter-spacing:0.1em;margin-top:4px;}
+
+/* API key prompt */
+#apikey-bar{
+  display:none;align-items:center;gap:10px;padding:8px 16px;
+  background:rgba(200,168,74,0.08);border-bottom:1px solid rgba(200,168,74,0.2);
+  font-size:11px;color:var(--accent);letter-spacing:0.06em;flex-shrink:0;
+}
+#apikey-bar.visible{display:flex;}
+#apikey-input{
+  flex:1;background:rgba(0,0,0,0.3);border:1px solid var(--border2);border-radius:3px;
+  padding:5px 10px;color:var(--text);font-family:'Syne Mono',monospace;font-size:11px;outline:none;
+}
+#apikey-input:focus{border-color:var(--accent);}
+#apikey-input::placeholder{color:var(--text-dim);}
+
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <div class="logo">
+    <div class="logo-mark">S</div>
+    <div>
+      <div class="logo-text">SurgicalSketch</div>
+      <div class="logo-sub">v2 · Intraoperative Annotation</div>
+    </div>
+  </div>
+
+  <div class="topbar-center">
+    <button class="mode-btn active" id="mode-atlas"   onclick="setMode('atlas')">Atlas</button>
+    <button class="mode-btn"        id="mode-analyze" onclick="setMode('analyze')">AI Analyze</button>
+    <button class="mode-btn"        id="mode-blend"   onclick="setMode('blend')">AI Blend</button>
+  </div>
+
+  <div class="top-actions">
+    <button class="tbtn" onclick="undoLast()">Undo</button>
+    <button class="tbtn" onclick="clearAll()">Clear</button>
+    <button class="tbtn" onclick="runRightPanel()">▶ Generate</button>
+    <button class="tbtn tbtn-gold" onclick="exportFrame()">Export</button>
+  </div>
+</div>
+
+<!-- API KEY BAR -->
+<div id="apikey-bar">
+  <span>Anthropic API key required for AI features:</span>
+  <input type="password" id="apikey-input" placeholder="sk-ant-…" oninput="saveKey(this.value)">
+  <span style="font-size:9px;color:var(--text-dim);letter-spacing:0.08em;">Stored locally in browser only</span>
+</div>
+
+<div id="workspace">
+
+<!-- TOOLBAR -->
+<div id="toolbar">
+  <button class="tbtn2 active" id="tool-draw"    title="Freehand" onclick="setTool('draw')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+  </button>
+  <button class="tbtn2" id="tool-arrow"   title="Arrow"    onclick="setTool('arrow')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="19" x2="19" y2="5"/><polyline points="12 5 19 5 19 12"/></svg>
+  </button>
+  <button class="tbtn2" id="tool-ellipse" title="Outline"  onclick="setTool('ellipse')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="12" rx="10" ry="7"/></svg>
+  </button>
+  <button class="tbtn2" id="tool-label"   title="Label"    onclick="setTool('label')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+  </button>
+  <div class="tsep"></div>
+  <button class="tbtn2" id="tool-erase"   title="Erase"    onclick="setTool('erase')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 20H7L3 16l10-10 7 7-3.5 3.5"/><path d="M6 10l8 8"/></svg>
+  </button>
+</div>
+
+<!-- PANELS -->
+<div id="panels">
+
+  <!-- LEFT: PHOTO -->
+  <div class="panel" id="panel-photo">
+    <div class="panel-header">
+      <span class="ph-title">Surgical Frame</span>
+      <span class="ph-badge" id="photo-badge">No image loaded</span>
+    </div>
+    <div class="canvas-wrap" id="photo-wrap">
+      <canvas id="bg-canvas"></canvas>
+      <canvas id="draw-canvas"></canvas>
+      <div id="upload-zone">
+        <div class="upload-ring" id="upload-ring">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <div class="upload-txt">
+          Drop surgical frame here<br>or <span onclick="document.getElementById('file-input').click()">browse</span>
+          <br><span style="font-size:9px;color:var(--text-dim)">JPEG · PNG</span>
+        </div>
+        <input type="file" id="file-input" accept="image/*">
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: OUTPUT -->
+  <div class="panel" id="panel-schema">
+    <div class="panel-header">
+      <span class="ph-title" id="right-panel-title">Anatomical Schematic</span>
+      <span class="ph-badge" id="schema-badge">Awaiting annotations</span>
+    </div>
+    <div class="canvas-wrap" id="schema-wrap">
+      <canvas id="schema-canvas"></canvas>
+      <div id="ai-loading">
+        <div class="spinner"></div>
+        <div class="ai-status" id="ai-status-text">Analyzing surgical frame…</div>
+      </div>
+      <div id="right-hint">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Annotate the frame, then press<br><strong style="color:var(--text-mid)">▶ Generate</strong> to render
+      </div>
+      <!-- AI blend result image -->
+      <img id="blend-result" style="display:none;max-width:100%;max-height:100%;object-fit:contain;position:absolute;" alt="AI blend">
+    </div>
+  </div>
+
+</div>
+
+<!-- SIDEBAR -->
+<div id="sidebar">
+  <div class="ss">
+    <div class="sl">Structure Type</div>
+    <div id="struct-grid">
+      <div class="si active" data-type="nerve"    data-color="#e8c547" onclick="setStruct(this)"><div class="si-dot" style="background:#e8c547"></div>NVB / Nerve</div>
+      <div class="si"        data-type="vessel"   data-color="#d94f4f" onclick="setStruct(this)"><div class="si-dot" style="background:#d94f4f"></div>Vessel / Artery</div>
+      <div class="si"        data-type="fascia"   data-color="#4fa8d9" onclick="setStruct(this)"><div class="si-dot" style="background:#4fa8d9"></div>Fascia / Plane</div>
+      <div class="si"        data-type="organ"    data-color="#9b6dd4" onclick="setStruct(this)"><div class="si-dot" style="background:#9b6dd4"></div>Organ / Gland</div>
+      <div class="si"        data-type="muscle"   data-color="#d97840" onclick="setStruct(this)"><div class="si-dot" style="background:#d97840"></div>Muscle / Sphincter</div>
+      <div class="si"        data-type="duct"     data-color="#4dc8a0" onclick="setStruct(this)"><div class="si-dot" style="background:#4dc8a0"></div>Duct / Anastomosis</div>
+      <div class="si"        data-type="landmark" data-color="#6880d4" onclick="setStruct(this)"><div class="si-dot" style="background:#6880d4"></div>Landmark / Margin</div>
+    </div>
+  </div>
+  <div class="ss">
+    <div class="sl">Stroke Weight</div>
+    <div class="sz-row">
+      <button class="sz-btn active" onclick="setSize(2,this)">S</button>
+      <button class="sz-btn"        onclick="setSize(4,this)">M</button>
+      <button class="sz-btn"        onclick="setSize(7,this)">L</button>
+    </div>
+  </div>
+  <div class="ss" style="padding:9px 14px"><div class="sl">Annotations</div></div>
+  <div id="ann-list"></div>
+</div>
+
+</div><!-- /workspace -->
+</div><!-- /app -->
+
+<!-- LABEL INPUT -->
+<div id="label-overlay">
+  <input type="text" id="label-input" placeholder="Name this structure…" maxlength="40">
+  <div class="lhint">Enter · confirm &nbsp;|&nbsp; Esc · cancel</div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════════
+let tool='draw', color='#e8c547', structType='nerve', strokeSize=2;
+let isDrawing=false, startX=0, startY=0;
+let annotations=[], currentPath=[];
+let imageLoaded=false, img=null, imgData=null;
+let currentMode='atlas';
+let renameTarget=null, pendingLabel=null;
+let apiKey = localStorage.getItem('ss_apikey')||'';
+
+const bgC  = document.getElementById('bg-canvas');
+const drC  = document.getElementById('draw-canvas');
+const schC = document.getElementById('schema-canvas');
+const bgX  = bgC.getContext('2d');
+const drX  = drC.getContext('2d');
+const schX = schC.getContext('2d');
+
+// ═══════════════════════════════════════════════════════════════
+//  RESIZE
+// ═══════════════════════════════════════════════════════════════
+function resize(){
+  const pw=document.getElementById('photo-wrap');
+  const sw=document.getElementById('schema-wrap');
+  [bgC,drC].forEach(c=>{c.width=pw.clientWidth;c.height=pw.clientHeight;});
+  schC.width=sw.clientWidth; schC.height=sw.clientHeight;
+  if(img) renderPhoto();
+  redraw();
+}
+window.addEventListener('resize',resize);
+setTimeout(resize,60);
+
+// ═══════════════════════════════════════════════════════════════
+//  IMAGE LOAD
+// ═══════════════════════════════════════════════════════════════
+document.getElementById('file-input').addEventListener('change',e=>loadImg(e.target.files[0]));
+const uz=document.getElementById('upload-zone');
+uz.addEventListener('dragover',e=>{e.preventDefault();document.getElementById('upload-ring').classList.add('over');});
+uz.addEventListener('dragleave',()=>document.getElementById('upload-ring').classList.remove('over'));
+uz.addEventListener('drop',e=>{e.preventDefault();document.getElementById('upload-ring').classList.remove('over');if(e.dataTransfer.files[0])loadImg(e.dataTransfer.files[0]);});
+
+function loadImg(file){
+  if(!file||!file.type.startsWith('image/'))return;
+  const r=new FileReader();
+  r.onload=e=>{
+    imgData=e.target.result;
+    img=new Image();
+    img.onload=()=>{
+      imageLoaded=true;
+      uz.classList.add('hidden');
+      document.getElementById('photo-badge').textContent=file.name;
+      resize();
+      // Show API key bar for AI modes
+      checkApiKeyBar();
+    };
+    img.src=imgData;
+  };
+  r.readAsDataURL(file);
+}
+
+function renderPhoto(){
+  bgX.clearRect(0,0,bgC.width,bgC.height);
+  if(!img)return;
+  const s=Math.min(bgC.width/img.width,bgC.height/img.height);
+  const ox=(bgC.width-img.width*s)/2, oy=(bgC.height-img.height*s)/2;
+  bgX.drawImage(img,ox,oy,img.width*s,img.height*s);
+  img._ox=ox;img._oy=oy;img._s=s;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  DRAWING
+// ═══════════════════════════════════════════════════════════════
+function setupDraw(){
+  drC.addEventListener('mousedown',e=>onDown(e.offsetX,e.offsetY));
+  drC.addEventListener('mousemove',e=>onMove(e.offsetX,e.offsetY));
+  drC.addEventListener('mouseup',  e=>onUp(e.offsetX,e.offsetY));
+  drC.addEventListener('mouseleave',()=>{if(isDrawing)onUp(startX,startY);});
+  drC.addEventListener('touchstart',e=>{e.preventDefault();const r=drC.getBoundingClientRect(),t=e.touches[0];onDown(t.clientX-r.left,t.clientY-r.top);},{passive:false});
+  drC.addEventListener('touchmove', e=>{e.preventDefault();const r=drC.getBoundingClientRect(),t=e.touches[0];onMove(t.clientX-r.left,t.clientY-r.top);},{passive:false});
+  drC.addEventListener('touchend',  e=>{const r=drC.getBoundingClientRect(),t=e.changedTouches[0];onUp(t.clientX-r.left,t.clientY-r.top);},{passive:false});
+}
+
+function onDown(x,y){
+  if(!imageLoaded)return;
+  if(tool==='label'){showLabelInput(x,y);return;}
+  isDrawing=true; startX=x; startY=y; currentPath=[{x,y}];
+}
+function onMove(x,y){
+  if(!isDrawing)return;
+  if(tool==='draw'){
+    currentPath.push({x,y});
+    redraw();
+    strokePath(drX,currentPath,color,strokeSize,0.85);
+  }
+  if(tool==='ellipse'||tool==='arrow'){redraw();previewShape(x,y);}
+}
+function onUp(x,y){
+  if(!isDrawing)return;
+  isDrawing=false;
+  if(tool==='draw'&&currentPath.length>2){
+    const a={type:structType,color,tool:'draw',points:[...currentPath],strokeSize,label:structType};
+    annotations.push(a); promptRename(a);
+  }
+  if(tool==='ellipse'){
+    const a={type:structType,color,tool:'ellipse',x:startX,y:startY,ex:x,ey:y,strokeSize,label:structType};
+    annotations.push(a); promptRename(a);
+  }
+  if(tool==='arrow'){
+    const a={type:structType,color,tool:'arrow',x:startX,y:startY,ex:x,ey:y,strokeSize,label:structType};
+    annotations.push(a); promptRename(a);
+  }
+  if(tool==='erase') eraseAt(x,y);
+  currentPath=[];
+  redraw(); updateList();
+}
+
+function previewShape(x,y){
+  drX.save();
+  drX.strokeStyle=color; drX.lineWidth=strokeSize; drX.globalAlpha=0.75;
+  if(tool==='ellipse'){
+    const cx=(startX+x)/2,cy=(startY+y)/2,rx=Math.abs(x-startX)/2,ry=Math.abs(y-startY)/2;
+    drX.beginPath(); drX.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); drX.stroke();
+  }
+  if(tool==='arrow') drawArrow(drX,startX,startY,x,y,color,strokeSize);
+  drX.restore();
+}
+
+function strokePath(ctx,pts,col,lw,alpha=1){
+  if(pts.length<2)return;
+  ctx.save();
+  ctx.strokeStyle=col; ctx.lineWidth=lw; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.globalAlpha=alpha;
+  ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y);
+  for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i].x,pts[i].y);
+  ctx.stroke(); ctx.restore();
+}
+
+function drawArrow(ctx,x1,y1,x2,y2,col,lw){
+  const angle=Math.atan2(y2-y1,x2-x1);
+  const len=Math.hypot(x2-x1,y2-y1);
+  const hw=Math.min(16,len*0.3);
+  ctx.save(); ctx.strokeStyle=col; ctx.fillStyle=col; ctx.lineWidth=lw; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-hw*Math.cos(angle-0.4),y2-hw*Math.sin(angle-0.4));
+  ctx.lineTo(x2-hw*Math.cos(angle+0.4),y2-hw*Math.sin(angle+0.4));
+  ctx.closePath(); ctx.fill(); ctx.restore();
+}
+
+function redraw(){
+  drX.clearRect(0,0,drC.width,drC.height);
+  annotations.forEach(a=>drawAnn(drX,a,false));
+}
+
+function drawAnn(ctx,ann,atlas=false){
+  ctx.save();
+  const lw=atlas?ann.strokeSize*2.2:ann.strokeSize;
+  ctx.strokeStyle=ann.color; ctx.fillStyle=ann.color;
+  ctx.lineWidth=lw; ctx.lineCap='round'; ctx.lineJoin='round';
+  ctx.globalAlpha=atlas?1:0.88;
+  if(atlas){ctx.shadowColor=ann.color; ctx.shadowBlur=6;}
+
+  if(ann.tool==='draw'&&ann.points?.length>1){
+    ctx.beginPath();
+    const p=ann.points;
+    ctx.moveTo(p[0].x,p[0].y);
+    if(atlas&&p.length>3){
+      // Smooth bezier
+      for(let i=1;i<p.length-2;i++){
+        const mx=(p[i].x+p[i+1].x)/2,my=(p[i].y+p[i+1].y)/2;
+        ctx.quadraticCurveTo(p[i].x,p[i].y,mx,my);
+      }
+      ctx.lineTo(p[p.length-1].x,p[p.length-1].y);
+    } else {
+      p.forEach(pt=>ctx.lineTo(pt.x,pt.y));
+    }
+    ctx.stroke();
+
+    // Atlas hatching for certain types
+    if(atlas&&(ann.type==='fascia'||ann.type==='organ')){
+      ctx.globalAlpha=0.12; ctx.lineWidth=lw*0.4;
+      const step=8;
+      const xs=ann.points.map(p=>p.x),ys=ann.points.map(p=>p.y);
+      const minX=Math.min(...xs),maxX=Math.max(...xs);
+      const minY=Math.min(...ys),maxY=Math.max(...ys);
+      for(let hx=minX;hx<maxX+step;hx+=step){
+        ctx.beginPath(); ctx.moveTo(hx,minY); ctx.lineTo(hx-step,maxY); ctx.stroke();
+      }
+    }
+  }
+
+  if(ann.tool==='ellipse'){
+    const cx=(ann.x+ann.ex)/2,cy=(ann.y+ann.ey)/2;
+    const rx=Math.abs(ann.ex-ann.x)/2,ry=Math.abs(ann.ey-ann.y)/2;
+    ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2);
+    if(atlas){ctx.globalAlpha=0.06;ctx.fill();ctx.globalAlpha=0.95;}
+    ctx.stroke();
+    // Dashed inner ring in atlas mode
+    if(atlas){
+      ctx.save(); ctx.globalAlpha=0.2; ctx.lineWidth=lw*0.35;
+      ctx.setLineDash([4,6]);
+      ctx.beginPath(); ctx.ellipse(cx,cy,rx*0.72,ry*0.72,0,0,Math.PI*2); ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  if(ann.tool==='arrow'){
+    drawArrow(ctx,ann.x,ann.y,ann.ex,ann.ey,ann.color,lw);
+  }
+
+  if(ann.tool==='label'){
+    ctx.font=`${atlas?'600 13':'12'}px Syne,sans-serif`;
+    ctx.globalAlpha=1;
+    ctx.beginPath(); ctx.arc(ann.lx,ann.ly,atlas?4:3,0,Math.PI*2); ctx.fill();
+    ctx.fillText(ann.label, ann.lx+10, ann.ly+4);
+  }
+
+  // Label on drawn annotations
+  if(ann.label&&ann.tool!=='label'){
+    ctx.font=`${atlas?'700 11px':'10px'} Syne,sans-serif`;
+    ctx.globalAlpha=atlas?1:0.82;
+    let tx,ty;
+    if(ann.tool==='draw'&&ann.points?.length){
+      const last=ann.points[ann.points.length-1];
+      tx=last.x+6; ty=last.y-5;
+    } else { tx=ann.x+6; ty=ann.y-6; }
+
+    if(atlas){
+      // Leader dashed line
+      ctx.save(); ctx.strokeStyle=ann.color; ctx.lineWidth=0.7;
+      ctx.globalAlpha=0.3; ctx.setLineDash([3,5]);
+      ctx.beginPath(); ctx.moveTo(tx-2,ty+2); ctx.lineTo(tx+60,ty+2); ctx.stroke();
+      ctx.restore();
+      ctx.globalAlpha=1;
+      ctx.fillText(ann.label.toUpperCase(),tx,ty);
+    } else {
+      ctx.fillText(ann.label,tx,ty);
+    }
+  }
+
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ERASER
+// ═══════════════════════════════════════════════════════════════
+function eraseAt(x,y){
+  const r=22;
+  annotations=annotations.filter(a=>{
+    if(a.tool==='draw') return !a.points.some(p=>Math.hypot(p.x-x,p.y-y)<r);
+    if(a.tool==='label') return Math.hypot(a.lx-x,a.ly-y)>r;
+    return Math.hypot(a.x-x,a.y-y)>r;
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  LABEL INPUT
+// ═══════════════════════════════════════════════════════════════
+function showLabelInput(x,y){
+  const ov=document.getElementById('label-overlay');
+  const r=drC.getBoundingClientRect();
+  ov.style.left=(r.left+x+10)+'px'; ov.style.top=(r.top+y-18)+'px';
+  ov.classList.add('visible');
+  const inp=document.getElementById('label-input');
+  inp.value=''; inp.focus(); pendingLabel={lx:x,ly:y};
+}
+function promptRename(ann){
+  renameTarget=ann;
+  const ov=document.getElementById('label-overlay');
+  const r=drC.getBoundingClientRect();
+  let tx=ann.x||(ann.points&&ann.points[0].x)||10;
+  let ty=ann.y||(ann.points&&ann.points[0].y)||10;
+  ov.style.left=(r.left+tx+10)+'px'; ov.style.top=(r.top+ty-18)+'px';
+  ov.classList.add('visible');
+  const inp=document.getElementById('label-input');
+  inp.value=ann.label||''; inp.focus(); inp.select();
+}
+document.getElementById('label-input').addEventListener('keydown',e=>{
+  if(e.key==='Enter'){
+    const v=e.target.value.trim();
+    if(pendingLabel){
+      annotations.push({type:structType,color,tool:'label',lx:pendingLabel.lx,ly:pendingLabel.ly,strokeSize,label:v||structType});
+      pendingLabel=null;
+    } else if(renameTarget){
+      renameTarget.label=v||renameTarget.type; renameTarget=null;
+    }
+    document.getElementById('label-overlay').classList.remove('visible');
+    redraw(); updateList();
+  }
+  if(e.key==='Escape'){
+    pendingLabel=null; renameTarget=null;
+    document.getElementById('label-overlay').classList.remove('visible');
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  ANNOTATION LIST
+// ═══════════════════════════════════════════════════════════════
+function updateList(){
+  const list=document.getElementById('ann-list');
+  list.innerHTML='';
+  annotations.forEach((a,i)=>{
+    const d=document.createElement('div'); d.className='ai';
+    d.innerHTML=`<div class="ai-dot" style="background:${a.color}"></div><div class="ai-name">${a.label}</div><div class="ai-del" onclick="delAnn(${i})">×</div>`;
+    list.appendChild(d);
+  });
+}
+function delAnn(i){annotations.splice(i,1);redraw();updateList();}
+
+// ═══════════════════════════════════════════════════════════════
+//  MODE SWITCHING
+// ═══════════════════════════════════════════════════════════════
+function setMode(m){
+  currentMode=m;
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('mode-'+m).classList.add('active');
+  const titles={atlas:'Anatomical Schematic — Atlas Style',analyze:'AI Structure Analysis',blend:'AI Surgical Illustration'};
+  document.getElementById('right-panel-title').textContent=titles[m];
+  document.getElementById('blend-result').style.display='none';
+  checkApiKeyBar();
+}
+
+function checkApiKeyBar(){
+  const bar=document.getElementById('apikey-bar');
+  if((currentMode==='analyze'||currentMode==='blend')&&imageLoaded){
+    bar.classList.add('visible');
+    document.getElementById('apikey-input').value=apiKey;
+  } else {
+    bar.classList.remove('visible');
+  }
+}
+
+function saveKey(v){
+  apiKey=v; localStorage.setItem('ss_apikey',v);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  GENERATE (dispatcher)
+// ═══════════════════════════════════════════════════════════════
+function runRightPanel(){
+  if(!imageLoaded){alert('Please upload a surgical frame first.');return;}
+  if(currentMode==='atlas')   generateAtlas();
+  if(currentMode==='analyze') runAIAnalyze();
+  if(currentMode==='blend')   runAIBlend();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  MODE 1: ATLAS RENDERING
+// ═══════════════════════════════════════════════════════════════
+function generateAtlas(){
+  document.getElementById('right-hint').classList.add('hidden');
+  document.getElementById('blend-result').style.display='none';
+  const W=schC.width, H=schC.height;
+  schX.clearRect(0,0,W,H);
+
+  // Atlas paper background
+  schX.fillStyle='#f5f0e8';
+  schX.fillRect(0,0,W,H);
+
+  // Aged paper texture (noise dots)
+  schX.save();
+  for(let i=0;i<3000;i++){
+    const x=Math.random()*W, y=Math.random()*H;
+    const g=Math.floor(Math.random()*30+200);
+    schX.fillStyle=`rgba(${g-30},${g-20},${g-40},0.06)`;
+    schX.fillRect(x,y,1,1);
+  }
+  schX.restore();
+
+  // Fine grid (anatomical atlas style)
+  schX.save();
+  schX.strokeStyle='rgba(160,140,100,0.12)'; schX.lineWidth=0.5;
+  for(let x=0;x<W;x+=32){schX.beginPath();schX.moveTo(x,0);schX.lineTo(x,H);schX.stroke();}
+  for(let y=0;y<H;y+=32){schX.beginPath();schX.moveTo(0,y);schX.lineTo(W,y);schX.stroke();}
+  schX.restore();
+
+  // Scale annotations from draw canvas coords → schema canvas coords
+  const sx=W/drC.width, sy=H/drC.height;
+
+  // Atlas color map — muted, ink-style
+  const atlasColors={
+    nerve:   '#8b6914',
+    vessel:  '#8b1a1a',
+    fascia:  '#1a5a8b',
+    organ:   '#5a1a8b',
+    muscle:  '#8b3a14',
+    duct:    '#1a7a5a',
+    landmark:'#2a3a8b',
+  };
+
+  const schAnns=annotations.map(a=>{
+    const n={...a, color: atlasColors[a.type]||a.color};
+    if(n.points) n.points=n.points.map(p=>({x:p.x*sx,y:p.y*sy}));
+    if('x' in n){n.x*=sx;n.ex*=sx;}
+    if('y' in n){n.y*=sy;n.ey*=sy;}
+    if('lx' in n){n.lx*=sx;n.ly*=sy;}
+    return n;
+  });
+
+  // Draw each annotation in atlas style
+  schAnns.forEach(a=>{
+    schX.save();
+    const lw=a.strokeSize*1.6;
+    schX.strokeStyle=a.color; schX.fillStyle=a.color;
+    schX.lineWidth=lw; schX.lineCap='round'; schX.lineJoin='round';
+
+    if(a.tool==='draw'&&a.points?.length>1){
+      // Smooth bezier
+      schX.beginPath();
+      const p=a.points;
+      schX.moveTo(p[0].x,p[0].y);
+      for(let i=1;i<p.length-2;i++){
+        const mx=(p[i].x+p[i+1].x)/2,my=(p[i].y+p[i+1].y)/2;
+        schX.quadraticCurveTo(p[i].x,p[i].y,mx,my);
+      }
+      schX.lineTo(p[p.length-1].x,p[p.length-1].y);
+      schX.stroke();
+
+      // Hatching fill for organs/fascia
+      if(a.type==='organ'||a.type==='fascia'){
+        schX.save();
+        schX.globalAlpha=0.25; schX.lineWidth=0.7;
+        const xs=p.map(pt=>pt.x),ys=p.map(pt=>pt.y);
+        const minX=Math.min(...xs),maxX=Math.max(...xs);
+        const minY=Math.min(...ys),maxY=Math.max(...ys);
+        const step=10;
+        for(let hx=minX-step;hx<maxX+step;hx+=step){
+          schX.beginPath(); schX.moveTo(hx,minY); schX.lineTo(hx+step,maxY); schX.stroke();
+        }
+        schX.restore();
+      }
+      // Stippling for muscles
+      if(a.type==='muscle'){
+        schX.save(); schX.globalAlpha=0.35;
+        for(let i=0;i<p.length;i+=3){
+          schX.beginPath(); schX.arc(p[i].x,p[i].y,0.9,0,Math.PI*2); schX.fill();
+        }
+        schX.restore();
+      }
+    }
+
+    if(a.tool==='ellipse'){
+      const cx=(a.x+a.ex)/2,cy=(a.y+a.ey)/2;
+      const rx=Math.abs(a.ex-a.x)/2,ry=Math.abs(a.ey-a.y)/2;
+      // Fill
+      schX.save(); schX.globalAlpha=0.06; schX.fill();
+      schX.beginPath(); schX.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); schX.fill(); schX.restore();
+      // Outline
+      schX.beginPath(); schX.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); schX.stroke();
+      // Inner dashed
+      schX.save(); schX.globalAlpha=0.3; schX.lineWidth=lw*0.4; schX.setLineDash([5,7]);
+      schX.beginPath(); schX.ellipse(cx,cy,rx*0.7,ry*0.7,0,0,Math.PI*2); schX.stroke(); schX.restore();
+    }
+
+    if(a.tool==='arrow'){
+      drawArrow(schX,a.x,a.y,a.ex,a.ey,a.color,lw);
+    }
+
+    // LABELS — Netter-style
+    if(a.label){
+      let tx,ty;
+      if(a.tool==='draw'&&a.points?.length){ const l=a.points[a.points.length-1]; tx=l.x+8;ty=l.y-4; }
+      else if(a.tool==='ellipse'){ tx=a.ex+8; ty=a.y-4; }
+      else if(a.tool==='arrow'){ tx=a.ex+8; ty=a.ey-4; }
+      else if(a.tool==='label'){ tx=a.lx+10; ty=a.ly+4; }
+      else { tx=a.x+6; ty=a.y-6; }
+
+      // Leader line
+      schX.save(); schX.strokeStyle=a.color; schX.lineWidth=0.8;
+      schX.globalAlpha=0.35; schX.setLineDash([3,5]);
+      schX.beginPath(); schX.moveTo(tx,ty+1); schX.lineTo(tx+70,ty+1); schX.stroke();
+      schX.restore();
+
+      // Label text
+      schX.font='bold 11px "Crimson Pro",Georgia,serif';
+      schX.fillStyle=a.color; schX.globalAlpha=1;
+      schX.letterSpacing='0.08em';
+      schX.fillText(a.label.toUpperCase(),tx,ty);
+
+      // Small anatomical dot marker
+      if(a.tool==='label'){
+        schX.beginPath(); schX.arc(a.lx,a.ly,3,0,Math.PI*2); schX.fill();
+      }
+    }
+
+    schX.restore();
+  });
+
+  // Atlas border frame
+  schX.save();
+  schX.strokeStyle='rgba(100,80,40,0.35)'; schX.lineWidth=1;
+  schX.strokeRect(8,8,W-16,H-16);
+  schX.strokeStyle='rgba(100,80,40,0.15)'; schX.lineWidth=0.5;
+  schX.strokeRect(12,12,W-24,H-24);
+  schX.restore();
+
+  // Atlas footer
+  schX.save();
+  schX.font='italic 10px "Crimson Pro",Georgia,serif';
+  schX.fillStyle='rgba(100,80,40,0.5)';
+  schX.fillText('SurgicalSketch · Anatomical Atlas Rendering',16,H-14);
+  schX.fillText(`${annotations.length} structure${annotations.length!==1?'s':''}`,W-80,H-14);
+  schX.restore();
+
+  document.getElementById('schema-badge').textContent=`${annotations.length} structures · atlas mode`;
+  document.getElementById('schema-badge').classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  MODE 2: AI ANALYZE
+// ═══════════════════════════════════════════════════════════════
+async function runAIAnalyze(){
+  if(!apiKey){alert('Please enter your Anthropic API key in the bar above.');return;}
+  showLoading('Sending frame to Claude vision…\nIdentifying anatomical structures…');
+
+  // Build base64 image
+  const base64=imgData.split(',')[1];
+  const mediaType=imgData.split(';')[0].split(':')[1];
+
+  const annContext = annotations.length>0
+    ? `The user has already drawn these annotations: ${annotations.map(a=>`${a.label} (${a.type})`).join(', ')}. Build on these.`
+    : 'No annotations yet — identify all visible structures.';
+
+  const prompt=`You are a surgical anatomy expert reviewing a laparoscopic prostatectomy (RARP) video frame.
+Analyze this surgical image and identify all visible anatomical structures.
+${annContext}
+
+Return ONLY valid JSON, no markdown, no explanation:
+{
+  "structures": [
+    {
+      "label": "structure name",
+      "type": "nerve|vessel|fascia|organ|muscle|duct|landmark",
+      "confidence": "high|medium|low",
+      "location": "brief description of where it is in the image (e.g. upper-left, center, etc.)",
+      "description": "one sentence clinical description",
+      "approximate_bounds": {"x_pct": 0.5, "y_pct": 0.5, "w_pct": 0.2, "h_pct": 0.15}
+    }
+  ],
+  "scene_description": "one paragraph describing what is happening in this surgical scene",
+  "surgical_phase": "name of the surgical phase visible"
+}
+
+Be specific to prostatectomy anatomy: look for prostate, NVB (neurovascular bundle), bladder neck, urethra, dorsal venous complex, Denonvilliers fascia, seminal vesicles, vas deferens, lateral pedicles.`;
+
+  try {
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1500,
+        messages:[{role:'user',content:[
+          {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
+          {type:'text',text:prompt}
+        ]}]
+      })
+    });
+    const data=await resp.json();
+    if(data.error){throw new Error(data.error.message);}
+
+    const raw=data.content[0].text.replace(/```json|```/g,'').trim();
+    const result=JSON.parse(raw);
+
+    hideLoading();
+    renderAIAnalysis(result);
+
+  } catch(err){
+    hideLoading();
+    alert('AI analysis failed: '+err.message);
+    console.error(err);
+  }
+}
+
+function renderAIAnalysis(result){
+  document.getElementById('right-hint').classList.add('hidden');
+  document.getElementById('blend-result').style.display='none';
+  const W=schC.width, H=schC.height;
+  schX.clearRect(0,0,W,H);
+
+  // Dark background
+  schX.fillStyle='#0b0d11'; schX.fillRect(0,0,W,H);
+
+  // Subtle grid
+  schX.save(); schX.strokeStyle='rgba(255,255,255,0.025)'; schX.lineWidth=0.5;
+  for(let x=0;x<W;x+=30){schX.beginPath();schX.moveTo(x,0);schX.lineTo(x,H);schX.stroke();}
+  for(let y=0;y<H;y+=30){schX.beginPath();schX.moveTo(0,y);schX.lineTo(W,y);schX.stroke();}
+  schX.restore();
+
+  const typeColors={nerve:'#e8c547',vessel:'#d94f4f',fascia:'#4fa8d9',organ:'#9b6dd4',muscle:'#d97840',duct:'#4dc8a0',landmark:'#6880d4'};
+
+  // Draw each identified structure
+  result.structures.forEach((s,i)=>{
+    const col=typeColors[s.type]||'#aaaaaa';
+    const bx=s.approximate_bounds;
+    const x=bx.x_pct*W, y=bx.y_pct*H;
+    const rw=(bx.w_pct*W)/2, rh=(bx.h_pct*H)/2;
+
+    schX.save();
+    // Confidence affects opacity
+    const alpha=s.confidence==='high'?0.9:s.confidence==='medium'?0.65:0.4;
+    schX.globalAlpha=alpha;
+    schX.shadowColor=col; schX.shadowBlur=12;
+
+    // Ellipse outline
+    schX.strokeStyle=col; schX.lineWidth=1.5;
+    schX.beginPath(); schX.ellipse(x,y,Math.max(rw,20),Math.max(rh,14),0,0,Math.PI*2);
+    schX.globalAlpha=alpha*0.08; schX.fillStyle=col; schX.fill();
+    schX.globalAlpha=alpha; schX.stroke();
+
+    // Dot center
+    schX.beginPath(); schX.arc(x,y,4,0,Math.PI*2); schX.fillStyle=col; schX.fill();
+
+    // Leader + label
+    const lx=x+rw+12, ly=y;
+    schX.save(); schX.strokeStyle=col; schX.lineWidth=0.7;
+    schX.globalAlpha=alpha*0.4; schX.setLineDash([3,5]);
+    schX.beginPath(); schX.moveTo(x+rw,y); schX.lineTo(lx,ly); schX.stroke();
+    schX.restore();
+
+    schX.globalAlpha=1;
+    schX.font='700 11px Syne,sans-serif';
+    schX.fillStyle=col;
+    schX.fillText(s.label.toUpperCase(),lx,ly-2);
+    schX.font='400 9px Syne,sans-serif';
+    schX.fillStyle='rgba(255,255,255,0.4)';
+    schX.fillText(s.confidence+' confidence',lx,ly+10);
+
+    schX.restore();
+
+    // Add to annotations list if not already there
+    if(!annotations.find(a=>a.label.toLowerCase()===s.label.toLowerCase())){
+      annotations.push({
+        type:s.type, color:col, tool:'ellipse',
+        x:x-Math.max(rw,20), y:y-Math.max(rh,14),
+        ex:x+Math.max(rw,20), ey:y+Math.max(rh,14),
+        strokeSize:2, label:s.label,
+        _aiGenerated:true
+      });
+    }
+  });
+
+  // Scene description
+  const descY=H-65;
+  schX.save();
+  schX.fillStyle='rgba(11,13,17,0.85)';
+  schX.fillRect(0,descY,W,H-descY);
+  schX.font='italic 11px "Crimson Pro",Georgia,serif';
+  schX.fillStyle='rgba(200,168,74,0.8)';
+  schX.fillText('Surgical Phase: '+result.surgical_phase,14,descY+16);
+  schX.font='11px Syne,sans-serif';
+  schX.fillStyle='rgba(180,180,180,0.65)';
+  // Word wrap description
+  wrapText(schX,result.scene_description,14,descY+34,W-28,14);
+  schX.restore();
+
+  document.getElementById('schema-badge').textContent=`${result.structures.length} structures identified`;
+  document.getElementById('schema-badge').classList.add('active');
+  redraw(); updateList();
+}
+
+function wrapText(ctx,text,x,y,maxW,lineH){
+  const words=text.split(' '); let line='';
+  for(let i=0;i<words.length;i++){
+    const test=line+words[i]+' ';
+    if(ctx.measureText(test).width>maxW&&i>0){ctx.fillText(line,x,y);line=words[i]+' ';y+=lineH;}
+    else line=test;
+  }
+  ctx.fillText(line,x,y);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  MODE 3: AI BLEND
+// ═══════════════════════════════════════════════════════════════
+async function runAIBlend(){
+  if(!apiKey){alert('Please enter your Anthropic API key in the bar above.');return;}
+  if(annotations.length===0){alert('Please draw some annotations first so the AI knows what to emphasize.');return;}
+
+  showLoading('Analyzing surgical scene…\nGenerating atlas-style illustration…');
+
+  // Step 1: Ask Claude to write a detailed illustration prompt based on the photo + annotations
+  const base64=imgData.split(',')[1];
+  const mediaType=imgData.split(';')[0].split(':')[1];
+  const annSummary=annotations.map(a=>`${a.label} (${a.type})`).join(', ');
+
+  const analysisPrompt=`You are an expert surgical illustrator. 
+I am showing you a laparoscopic prostatectomy surgical frame. 
+The surgeon has annotated these structures: ${annSummary}.
+
+Write a detailed prompt for generating an anatomical atlas-style illustration of this exact surgical scene.
+The illustration should look like a plate from Netter's Atlas — clean ink lines on cream paper, anatomical color conventions, hatching for tissue texture, labeled structures.
+
+Reply with ONLY the image generation prompt, nothing else. Start with: "Anatomical atlas illustration,"`;
+
+  try {
+    setStatus('Asking Claude to describe the scene…');
+    const r1=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:400,
+        messages:[{role:'user',content:[
+          {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
+          {type:'text',text:analysisPrompt}
+        ]}]
+      })
+    });
+    const d1=await r1.json();
+    if(d1.error)throw new Error(d1.error.message);
+    const illustrationPrompt=d1.content[0].text.trim();
+
+    // Step 2: Generate image with Together AI (FLUX)
+    setStatus('Generating anatomical illustration…\nThis may take 15–30 seconds…');
+    const r2=await fetch('https://api.together.xyz/v1/images/generations',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+      body:JSON.stringify({
+        model:'black-forest-labs/FLUX.1-schnell',
+        prompt:illustrationPrompt+', medical illustration, clean lines, anatomical atlas style, cream paper background, no photography',
+        width:1024, height:768, steps:4, n:1,
+        response_format:'b64_json'
+      })
+    });
+
+    if(!r2.ok){
+      // Fallback: render enhanced atlas locally
+      hideLoading();
+      setStatus('');
+      generateAtlas();
+      document.getElementById('schema-badge').textContent='Atlas render (image API unavailable)';
+      showToast('Image generation requires a Together AI key. Rendered atlas style locally instead.');
+      return;
+    }
+
+    const d2=await r2.json();
+    const b64=d2.data[0].b64_json;
+    hideLoading();
+    const blendImg=document.getElementById('blend-result');
+    blendImg.src='data:image/png;base64,'+b64;
+    blendImg.style.display='block';
+    schC.style.display='none';
+    document.getElementById('right-hint').classList.add('hidden');
+    document.getElementById('schema-badge').textContent='AI illustration generated';
+    document.getElementById('schema-badge').classList.add('active');
+
+  } catch(err){
+    hideLoading();
+    // Graceful fallback to atlas
+    generateAtlas();
+    document.getElementById('schema-badge').textContent='Atlas render (AI blend fallback)';
+    showToast('AI Blend requires a Together AI key. Showing atlas render instead. Error: '+err.message);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  LOADING OVERLAY
+// ═══════════════════════════════════════════════════════════════
+function showLoading(msg){
+  document.getElementById('right-hint').classList.add('hidden');
+  const ov=document.getElementById('ai-loading');
+  ov.classList.add('visible');
+  setStatus(msg);
+}
+function hideLoading(){
+  document.getElementById('ai-loading').classList.remove('visible');
+}
+function setStatus(msg){
+  document.getElementById('ai-status-text').innerHTML=msg.replace(/\n/g,'<br>');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════════════════════
+function showToast(msg){
+  const t=document.createElement('div');
+  t.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1c2028;border:1px solid #2a3342;color:#aaa;font-size:11px;padding:10px 18px;border-radius:4px;z-index:9999;max-width:400px;text-align:center;line-height:1.6;';
+  t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),5000);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  EXPORT
+// ═══════════════════════════════════════════════════════════════
+function exportFrame(){
+  const ow=bgC.width*2+4, oh=bgC.height;
+  const off=document.createElement('canvas');
+  off.width=ow; off.height=oh;
+  const ctx=off.getContext('2d');
+  ctx.fillStyle='#0b0d11'; ctx.fillRect(0,0,ow,oh);
+  ctx.drawImage(bgC,0,0); ctx.drawImage(drC,0,0);
+  ctx.fillStyle='#1c2028'; ctx.fillRect(bgC.width,0,4,oh);
+
+  const blendImg=document.getElementById('blend-result');
+  if(blendImg.style.display!=='none'&&blendImg.complete){
+    ctx.drawImage(blendImg,bgC.width+4,0,bgC.width,oh);
+  } else {
+    ctx.drawImage(schC,bgC.width+4,0);
+  }
+
+  const a=document.createElement('a');
+  a.download='surgicalsketch-'+Date.now()+'.png';
+  a.href=off.toDataURL('image/png');
+  a.click();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  TOOL / STRUCT / SIZE
+// ═══════════════════════════════════════════════════════════════
+function setTool(t){
+  tool=t;
+  document.querySelectorAll('.tbtn2').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tool-'+t)?.classList.add('active');
+}
+function setStruct(el){
+  color=el.dataset.color; structType=el.dataset.type;
+  document.querySelectorAll('.si').forEach(s=>s.classList.remove('active'));
+  el.classList.add('active');
+}
+function setSize(s,btn){
+  strokeSize=s;
+  document.querySelectorAll('.sz-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function undoLast(){annotations.pop();redraw();updateList();}
+function clearAll(){
+  annotations=[];redraw();updateList();
+  schX.clearRect(0,0,schC.width,schC.height);
+  document.getElementById('right-hint').classList.remove('hidden');
+  document.getElementById('blend-result').style.display='none';
+  document.getElementById('schema-badge').textContent='Awaiting annotations';
+  document.getElementById('schema-badge').classList.remove('active');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════════
+setupDraw();
+if(apiKey) document.getElementById('apikey-input').value=apiKey;
+</script>
+</body>
+</html>
