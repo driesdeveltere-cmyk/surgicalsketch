@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SurgicalSketch v4</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Syne:wght@400;500;700&family=Syne+Mono&display=swap');
+:root{
+  --bg:#08090c;--surf:#0e1016;--surf2:#13161d;
+  --b1:#181c24;--b2:#222834;
+  --text:#e0dbd0;--mid:#6a7585;--dim:#2e3845;
+  --gold:#c8a84a;--gold-g:rgba(200,168,74,0.12);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;}
+#app{display:flex;flex-direction:column;height:100vh;}
+
+/* TOP BAR */
+#topbar{height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;background:var(--surf);border-bottom:1px solid var(--b1);flex-shrink:0;z-index:20;}
+.logo{display:flex;align-items:center;gap:9px;}
+.logo-pip{width:7px;height:7px;border-radius:50%;background:var(--gold);}
+.logo-name{font-family:'Crimson Pro',serif;font-size:18px;font-weight:600;letter-spacing:0.01em;}
+.logo-sub{font-size:8px;letter-spacing:0.22em;text-transform:uppercase;color:var(--dim);margin-top:1px;}
+.top-center{display:flex;gap:3px;}
+.vbtn{padding:4px 13px;border-radius:3px;border:1px solid var(--b2);background:transparent;color:var(--mid);font-family:'Syne',sans-serif;font-size:9px;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer;transition:all 0.15s;}
+.vbtn:hover{border-color:var(--gold);color:var(--gold);}
+.vbtn.active{background:var(--gold-g);border-color:var(--gold);color:var(--gold);}
+.top-right{display:flex;gap:5px;align-items:center;}
+.tbtn{padding:4px 11px;border-radius:3px;border:1px solid var(--b2);background:transparent;color:var(--mid);font-family:'Syne',sans-serif;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:all 0.15s;}
+.tbtn:hover{color:var(--text);background:rgba(255,255,255,0.04);}
+.tbtn-gold{background:var(--gold);border-color:var(--gold);color:#08090c;font-weight:700;}
+.tbtn-gold:hover{background:#dab84a;color:#08090c;}
+.res-badge{font-size:8px;letter-spacing:0.12em;color:var(--dim);font-family:'Syne Mono',monospace;padding:3px 8px;border:1px solid var(--b1);border-radius:2px;}
+
+/* WORKSPACE */
+#workspace{flex:1;display:flex;overflow:hidden;}
+
+/* TOOLBAR */
+#toolbar{width:48px;background:var(--surf);border-right:1px solid var(--b1);display:flex;flex-direction:column;align-items:center;padding:8px 0;gap:2px;flex-shrink:0;}
+.tl{width:34px;height:34px;border-radius:4px;background:transparent;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--dim);transition:all 0.15s;}
+.tl:hover{background:rgba(255,255,255,0.05);color:var(--mid);}
+.tl.active{background:var(--gold-g);color:var(--gold);}
+.tl svg{width:15px;height:15px;}
+.tsep{width:22px;height:1px;background:var(--b1);margin:3px 0;}
+
+/* MAIN CANVAS AREA */
+#main{flex:1;position:relative;overflow:hidden;background:#040506;display:flex;align-items:center;justify-content:center;}
+#canvas-stack{position:relative;}
+canvas{position:absolute;top:0;left:0;}
+#bg-c{z-index:1;}#dr-c{z-index:2;}#ov-c{z-index:3;pointer-events:none;}#ui-c{z-index:4;pointer-events:none;}
+
+/* UPLOAD */
+#upload-zone{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#040506;}
+#upload-zone.hidden{display:none;}
+.upr{width:68px;height:68px;border-radius:50%;border:1px dashed var(--b2);display:flex;align-items:center;justify-content:center;color:var(--dim);transition:all 0.2s;}
+.upt{font-size:11px;color:var(--dim);letter-spacing:0.06em;text-align:center;line-height:2;}
+.upt span{color:var(--gold);cursor:pointer;}
+#file-in{display:none;}
+
+/* SIDEBAR */
+#sidebar{width:215px;background:var(--surf);border-left:1px solid var(--b1);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;}
+.ss{padding:11px 13px;border-bottom:1px solid var(--b1);}
+.sl{font-size:8px;letter-spacing:0.24em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;}
+.sti{display:flex;align-items:center;gap:8px;padding:5px 7px;border-radius:3px;cursor:pointer;border:1px solid transparent;transition:all 0.14s;font-size:10px;color:var(--mid);}
+.sti:hover{background:rgba(255,255,255,0.03);}
+.sti.active{background:rgba(255,255,255,0.055);border-color:var(--b2);color:var(--text);}
+.sti-sw{width:20px;height:9px;border-radius:3px;flex-shrink:0;}
+.szr{display:flex;gap:4px;}
+.szb{width:28px;height:24px;border-radius:3px;border:1px solid var(--b1);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--dim);font-family:'Syne',sans-serif;font-size:9px;transition:all 0.14s;}
+.szb:hover,.szb.active{border-color:var(--gold);color:var(--gold);background:var(--gold-g);}
+
+/* Style selector */
+.style-row{display:flex;gap:4px;flex-wrap:wrap;}
+.stybtn{padding:3px 9px;border-radius:2px;border:1px solid var(--b2);background:transparent;color:var(--dim);font-family:'Syne',sans-serif;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:all 0.14s;}
+.stybtn:hover{color:var(--mid);}
+.stybtn.active{border-color:var(--gold);color:var(--gold);background:var(--gold-g);}
+
+/* BG selector */
+.bg-row{display:flex;gap:4px;}
+.bgbtn{padding:3px 9px;border-radius:2px;border:1px solid var(--b2);background:transparent;color:var(--dim);font-family:'Syne',sans-serif;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:all 0.14s;}
+.bgbtn:hover{color:var(--mid);}
+.bgbtn.active{border-color:var(--gold);color:var(--gold);background:var(--gold-g);}
+
+#ann-list{flex:1;overflow-y:auto;}
+.ali{display:flex;align-items:center;gap:6px;padding:7px 13px;border-bottom:1px solid rgba(255,255,255,0.022);font-size:10px;color:var(--mid);transition:background 0.1s;}
+.ali:hover{background:rgba(255,255,255,0.022);}
+.ali-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.ali-name{flex:1;}
+.ali-del{opacity:0;font-size:14px;color:var(--dim);cursor:pointer;transition:opacity 0.1s;}
+.ali:hover .ali-del{opacity:1;}
+
+/* Label input */
+#label-ov{display:none;position:fixed;z-index:100;background:var(--surf2);border:1px solid var(--b2);border-radius:4px;padding:8px 11px;box-shadow:0 12px 40px rgba(0,0,0,0.7);min-width:180px;}
+#label-ov.vis{display:block;}
+#label-in{background:transparent;border:none;outline:none;color:var(--text);font-family:'Syne',sans-serif;font-size:12px;width:100%;}
+#label-in::placeholder{color:var(--dim);}
+.lhint{font-size:8px;color:var(--dim);letter-spacing:0.1em;margin-top:3px;}
+
+/* Canvas size indicator */
+#canvas-info{position:absolute;top:8px;right:8px;font-size:8px;font-family:'Syne Mono',monospace;color:rgba(200,168,74,0.4);letter-spacing:0.1em;pointer-events:none;z-index:15;}
+
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px;}
+</style>
+</head>
+<body>
+<div id="app">
+<div id="topbar">
+  <div class="logo">
+    <div class="logo-pip"></div>
+    <div><div class="logo-name">SurgicalSketch</div><div class="logo-sub">v4 · 1080p Export</div></div>
+  </div>
+  <div class="top-center">
+    <button class="vbtn active" id="v-overlay"  onclick="setView('overlay')">Overlay</button>
+    <button class="vbtn"        id="v-isolated" onclick="setView('isolated')">Isolated</button>
+    <button class="vbtn"        id="v-side"     onclick="setView('side')">Side by Side</button>
+  </div>
+  <div class="top-right">
+    <span class="res-badge">1920 × 1080</span>
+    <button class="tbtn" onclick="undoLast()">Undo</button>
+    <button class="tbtn" onclick="clearAll()">Clear</button>
+    <button class="tbtn" onclick="doRender()">▶ Render</button>
+    <button class="tbtn tbtn-gold" onclick="exportHD()">Export 1080p</button>
+  </div>
+</div>
+
+<div id="workspace">
+  <div id="toolbar">
+    <button class="tl active" id="tl-draw"    onclick="setTool('draw')"    title="Freehand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>
+    <button class="tl"        id="tl-arrow"   onclick="setTool('arrow')"   title="Arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="19" x2="19" y2="5"/><polyline points="12 5 19 5 19 12"/></svg></button>
+    <button class="tl"        id="tl-ellipse" onclick="setTool('ellipse')" title="Outline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="12" rx="10" ry="7"/></svg></button>
+    <button class="tl"        id="tl-label"   onclick="setTool('label')"   title="Pin label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></button>
+    <div class="tsep"></div>
+    <button class="tl"        id="tl-erase"   onclick="setTool('erase')"   title="Erase"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 20H7L3 16l10-10 7 7-3.5 3.5"/><path d="M6 10l8 8"/></svg></button>
+  </div>
+
+  <div id="main">
+    <div id="canvas-stack">
+      <canvas id="bg-c"></canvas>
+      <canvas id="dr-c"></canvas>
+      <canvas id="ov-c"></canvas>
+      <canvas id="ui-c"></canvas>
+    </div>
+    <div id="upload-zone">
+      <div class="upr"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+      <div class="upt">Drop surgical frame here<br>or <span onclick="document.getElementById('file-in').click()">browse</span><br><span style="font-size:9px;opacity:0.5">JPEG · PNG · any resolution</span></div>
+      <input type="file" id="file-in" accept="image/*">
+    </div>
+    <div id="canvas-info">DRAW CANVAS</div>
+  </div>
+
+  <div id="sidebar">
+    <div class="ss">
+      <div class="sl">Structure Type</div>
+      <div id="struct-list">
+        <div class="sti active" data-type="artery"   data-color="#e83030" onclick="setStruct(this)"><div class="sti-sw" style="background:linear-gradient(90deg,#901010,#ff5050,#901010)"></div>Artery</div>
+        <div class="sti"        data-type="vein"     data-color="#2858e0" onclick="setStruct(this)"><div class="sti-sw" style="background:linear-gradient(90deg,#102080,#4880ff,#102080)"></div>Vein</div>
+        <div class="sti"        data-type="nerve"    data-color="#d8b020" onclick="setStruct(this)"><div class="sti-sw" style="background:linear-gradient(90deg,#806810,#ffe040,#806810)"></div>Nerve</div>
+        <div class="sti"        data-type="ureter"   data-color="#e07820" onclick="setStruct(this)"><div class="sti-sw" style="background:linear-gradient(90deg,#904010,#ffa040,#904010)"></div>Ureter</div>
+        <div class="sti"        data-type="fascia"   data-color="#a8b8d0" onclick="setStruct(this)"><div class="sti-sw" style="background:linear-gradient(90deg,#607090,#c8d8f0,#607090)"></div>Fascia / Tissue</div>
+        <div class="sti"        data-type="organ"    data-color="#d05030" onclick="setStruct(this)"><div class="sti-sw" style="background:linear-gradient(90deg,#882010,#e87050,#882010)"></div>Organ / Gland</div>
+        <div class="sti"        data-type="ligament" data-color="#78b028" onclick="setStruct(this)"><div class="sti-sw" style="background:linear-gradient(90deg,#486010,#a8d840,#486010)"></div>Ligament</div>
+        <div class="sti"        data-type="lymph"    data-color="#28b878" onclick="setStruct(this)"><div class="sti-sw" style="background:linear-gradient(90deg,#107050,#40e098,#107050)"></div>Lymph Node</div>
+      </div>
+    </div>
+
+    <div class="ss">
+      <div class="sl">Structure Size</div>
+      <div class="szr">
+        <button class="szb active" onclick="setSz(2,this)">S</button>
+        <button class="szb"        onclick="setSz(4,this)">M</button>
+        <button class="szb"        onclick="setSz(7,this)">L</button>
+        <button class="szb"        onclick="setSz(11,this)">XL</button>
+      </div>
+    </div>
+
+    <div class="ss">
+      <div class="sl">Render Style</div>
+      <div class="style-row">
+        <button class="stybtn active" id="sty-hud"       onclick="setStyle('hud',this)">HUD</button>
+        <button class="stybtn"        id="sty-glow"      onclick="setStyle('glow',this)">Glow</button>
+        <button class="stybtn"        id="sty-atlas"     onclick="setStyle('atlas',this)">Atlas</button>
+        <button class="stybtn"        id="sty-minimal"   onclick="setStyle('minimal',this)">Minimal</button>
+      </div>
+    </div>
+
+    <div class="ss">
+      <div class="sl">Isolated Background</div>
+      <div class="bg-row">
+        <button class="bgbtn active" id="bg-dark"      onclick="setBg('dark',this)">Dark</button>
+        <button class="bgbtn"        id="bg-black"     onclick="setBg('black',this)">Black</button>
+        <button class="bgbtn"        id="bg-warm"      onclick="setBg('warm',this)">Warm</button>
+      </div>
+    </div>
+
+    <div class="ss" style="padding:8px 13px"><div class="sl">Annotated Structures</div></div>
+    <div id="ann-list"></div>
+  </div>
+</div>
+</div>
+
+<div id="label-ov">
+  <input type="text" id="label-in" placeholder="Name this structure…" maxlength="40">
+  <div class="lhint">Enter · confirm &nbsp;|&nbsp; Esc · cancel</div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// CONSTANTS — 1080p output
+// ═══════════════════════════════════════════
+const OUT_W = 1920, OUT_H = 1080;
+
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let tool='draw', structType='artery', drawColor='#e83030', strokeSz=2;
+let isDrawing=false, startX=0, startY=0;
+let annotations=[], curPath=[];
+let img=null, imgData=null, imageLoaded=false;
+let viewMode='overlay', renderStyle='hud', isoBg='dark';
+let renameTarget=null, pendingLabel=null;
+let scale=1, offsetX=0, offsetY=0; // canvas-to-display scaling
+
+const bgC=document.getElementById('bg-c'), drC=document.getElementById('dr-c');
+const ovC=document.getElementById('ov-c'), uiC=document.getElementById('ui-c');
+const bgX=bgC.getContext('2d'), drX=drC.getContext('2d');
+const ovX=ovC.getContext('2d'), uiX=uiC.getContext('2d');
+
+// ═══════════════════════════════════════════
+// STRUCTURE VISUAL DEFINITIONS
+// ═══════════════════════════════════════════
+const SD={
+  artery:  {base:'#cc1414',hi:'#ff8080',hi2:'#ffcccc',shadow:'#600808',label:'#ff7070',glow:'#ff2020',thick:1.8},
+  vein:    {base:'#1830c0',hi:'#70a0ff',hi2:'#c0d8ff',shadow:'#081068',label:'#88b0ff',glow:'#2050ff',thick:1.6},
+  nerve:   {base:'#b89010',hi:'#ffe860',hi2:'#fff4b0',shadow:'#605000',label:'#ffe040',glow:'#ffc800',thick:1.4},
+  ureter:  {base:'#c06010',hi:'#ffb060',hi2:'#ffe0b0',shadow:'#603008',label:'#ffb060',glow:'#ff8020',thick:1.6},
+  fascia:  {base:'#7080a0',hi:'#d0ddf0',hi2:'#eef2ff',shadow:'#303848',label:'#b8cce8',glow:'#90a8d0',thick:1.2},
+  organ:   {base:'#b02818',hi:'#e87060',hi2:'#f8c0b0',shadow:'#580c08',label:'#e88070',glow:'#e03020',thick:1.5},
+  ligament:{base:'#508018',hi:'#b0e040',hi2:'#dcf890',shadow:'#284008',label:'#c0f050',glow:'#88cc20',thick:1.3},
+  lymph:   {base:'#187870',hi:'#50e0c0',hi2:'#a0f8e8',shadow:'#083830',label:'#60f0c0',glow:'#20d0a8',thick:1.4},
+};
+
+// ═══════════════════════════════════════════
+// CANVAS SETUP — fixed 1920×1080 internal
+// ═══════════════════════════════════════════
+function setupCanvases(){
+  const main = document.getElementById('main');
+  const mw = main.clientWidth, mh = main.clientHeight;
+  // Calculate scale to fit 1920×1080 in available space
+  scale = Math.min(mw / OUT_W, mh / OUT_H) * 0.96;
+  const dw = Math.round(OUT_W * scale), dh = Math.round(OUT_H * scale);
+
+  const stack = document.getElementById('canvas-stack');
+  stack.style.width  = dw + 'px';
+  stack.style.height = dh + 'px';
+
+  [bgC,drC,ovC,uiC].forEach(c=>{
+    c.width=dw; c.height=dh;
+    c.style.width=dw+'px'; c.style.height=dh+'px';
+  });
+
+  document.getElementById('canvas-info').textContent =
+    `${OUT_W}×${OUT_H} @ ${Math.round(scale*100)}%`;
+
+  if(img) drawPhoto();
+  redrawAnns();
+  if(viewMode!=='overlay') doRender();
+}
+window.addEventListener('resize', setupCanvases);
+setTimeout(setupCanvases, 60);
+
+// Convert display coords → 1080p coords
+function toOut(x,y){ return {x: x/scale, y: y/scale}; }
+function toOutPts(pts){ return pts.map(p=>toOut(p.x,p.y)); }
+
+// ═══════════════════════════════════════════
+// IMAGE LOAD
+// ═══════════════════════════════════════════
+document.getElementById('file-in').addEventListener('change',e=>loadImg(e.target.files[0]));
+const uz=document.getElementById('upload-zone');
+uz.addEventListener('dragover',e=>e.preventDefault());
+uz.addEventListener('drop',e=>{e.preventDefault();if(e.dataTransfer.files[0])loadImg(e.dataTransfer.files[0]);});
+
+function loadImg(file){
+  if(!file||!file.type.startsWith('image/'))return;
+  const r=new FileReader();
+  r.onload=e=>{
+    imgData=e.target.result; img=new Image();
+    img.onload=()=>{imageLoaded=true;uz.classList.add('hidden');setupCanvases();};
+    img.src=imgData;
+  };
+  r.readAsDataURL(file);
+}
+
+function drawPhoto(alpha=1){
+  bgX.clearRect(0,0,bgC.width,bgC.height);
+  if(!img)return;
+  // Always fill to display canvas size
+  const s=Math.min(bgC.width/img.width,bgC.height/img.height);
+  const ox=(bgC.width-img.width*s)/2, oy=(bgC.height-img.height*s)/2;
+  bgX.globalAlpha=alpha;
+  bgX.drawImage(img,ox,oy,img.width*s,img.height*s);
+  bgX.globalAlpha=1;
+  // Store transform for export
+  img._ds=s; img._dox=ox; img._doy=oy;
+}
+
+// ═══════════════════════════════════════════
+// DRAWING — works in display coords
+// ═══════════════════════════════════════════
+function setupDraw(){
+  drC.addEventListener('mousedown',e=>onDown(e.offsetX,e.offsetY));
+  drC.addEventListener('mousemove',e=>onMove(e.offsetX,e.offsetY));
+  drC.addEventListener('mouseup',  e=>onUp(e.offsetX,e.offsetY));
+  drC.addEventListener('mouseleave',()=>{if(isDrawing)onUp(startX,startY);});
+  drC.addEventListener('touchstart',e=>{e.preventDefault();const r=drC.getBoundingClientRect(),t=e.touches[0];onDown(t.clientX-r.left,t.clientY-r.top);},{passive:false});
+  drC.addEventListener('touchmove', e=>{e.preventDefault();const r=drC.getBoundingClientRect(),t=e.touches[0];onMove(t.clientX-r.left,t.clientY-r.top);},{passive:false});
+  drC.addEventListener('touchend',  e=>{const r=drC.getBoundingClientRect(),t=e.changedTouches[0];onUp(t.clientX-r.left,t.clientY-r.top);},{passive:false});
+}
+
+function onDown(x,y){
+  if(!imageLoaded)return;
+  if(tool==='label'){showLabelInput(x,y);return;}
+  isDrawing=true; startX=x; startY=y; curPath=[{x,y}];
+}
+function onMove(x,y){
+  if(!isDrawing)return;
+  if(tool==='draw'){curPath.push({x,y});redrawAnns();liveStroke();}
+  if(tool==='ellipse'||tool==='arrow'){redrawAnns();previewShape(x,y);}
+}
+function onUp(x,y){
+  if(!isDrawing)return; isDrawing=false;
+  if(tool==='draw'&&curPath.length>2){
+    const a={type:structType,color:drawColor,tool:'draw',points:[...curPath],strokeSz,label:structType};
+    annotations.push(a); promptRename(a);
+  }
+  if(tool==='ellipse'){
+    const a={type:structType,color:drawColor,tool:'ellipse',x:startX,y:startY,ex:x,ey:y,strokeSz,label:structType};
+    annotations.push(a); promptRename(a);
+  }
+  if(tool==='arrow'){
+    const a={type:structType,color:drawColor,tool:'arrow',x:startX,y:startY,ex:x,ey:y,strokeSz,label:structType};
+    annotations.push(a); promptRename(a);
+  }
+  if(tool==='erase') eraseAt(x,y);
+  curPath=[]; redrawAnns(); updateList();
+}
+function liveStroke(){
+  if(curPath.length<2)return;
+  drX.save(); drX.strokeStyle=drawColor; drX.lineWidth=strokeSz*scale;
+  drX.lineCap='round'; drX.lineJoin='round'; drX.globalAlpha=0.65;
+  drX.beginPath(); drX.moveTo(curPath[0].x,curPath[0].y);
+  curPath.forEach(p=>drX.lineTo(p.x,p.y)); drX.stroke(); drX.restore();
+}
+function previewShape(x,y){
+  drX.save(); drX.strokeStyle=drawColor; drX.lineWidth=strokeSz*scale; drX.globalAlpha=0.65;
+  if(tool==='ellipse'){
+    const cx=(startX+x)/2,cy=(startY+y)/2,rx=Math.abs(x-startX)/2,ry=Math.abs(y-startY)/2;
+    drX.beginPath(); drX.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); drX.stroke();
+  }
+  if(tool==='arrow') arrowRaw(drX,startX,startY,x,y,drawColor,strokeSz*scale);
+  drX.restore();
+}
+function redrawAnns(){
+  drX.clearRect(0,0,drC.width,drC.height);
+  annotations.forEach(a=>annSimple(drX,a,scale));
+}
+function annSimple(ctx,a,sc=1){
+  ctx.save(); ctx.strokeStyle=a.color; ctx.fillStyle=a.color;
+  ctx.lineWidth=a.strokeSz*sc; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.globalAlpha=0.7;
+  if(a.tool==='draw'&&a.points?.length>1){
+    ctx.beginPath(); ctx.moveTo(a.points[0].x,a.points[0].y);
+    a.points.forEach(p=>ctx.lineTo(p.x,p.y)); ctx.stroke();
+  }
+  if(a.tool==='ellipse'){
+    const cx=(a.x+a.ex)/2,cy=(a.y+a.ey)/2,rx=Math.abs(a.ex-a.x)/2,ry=Math.abs(a.ey-a.y)/2;
+    ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); ctx.stroke();
+  }
+  if(a.tool==='arrow') arrowRaw(ctx,a.x,a.y,a.ex,a.ey,a.color,a.strokeSz*sc);
+  if(a.label&&a.tool!=='label'){
+    ctx.globalAlpha=0.65; ctx.font=`${Math.round(10*sc)}px Syne,sans-serif`;
+    const p = a.tool==='draw'&&a.points?.length ? a.points[0] : {x:a.x,y:a.y};
+    ctx.fillText(a.label, p.x+5*sc, p.y-4*sc);
+  }
+  ctx.restore();
+}
+function arrowRaw(ctx,x1,y1,x2,y2,col,lw){
+  const angle=Math.atan2(y2-y1,x2-x1), hw=Math.min(lw*5,Math.hypot(x2-x1,y2-y1)*0.35);
+  ctx.save(); ctx.strokeStyle=col; ctx.fillStyle=col; ctx.lineWidth=lw; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-hw*Math.cos(angle-0.42),y2-hw*Math.sin(angle-0.42));
+  ctx.lineTo(x2-hw*Math.cos(angle+0.42),y2-hw*Math.sin(angle+0.42));
+  ctx.closePath(); ctx.fill(); ctx.restore();
+}
+
+// ═══════════════════════════════════════════
+// ANATOMICAL RENDERERS — work in OUTPUT px
+// Each annotation is scaled up to OUT_W×OUT_H
+// ═══════════════════════════════════════════
+
+// Convert display-space annotation to output-space points
+function getOutPts(ann){
+  if(ann.tool==='draw')   return ann.points.map(p=>toOut(p.x,p.y));
+  if(ann.tool==='ellipse'){
+    const cx=toOut((ann.x+ann.ex)/2,(ann.y+ann.ey)/2);
+    const rx=Math.abs(ann.ex-ann.x)/2/scale, ry=Math.abs(ann.ey-ann.y)/2/scale;
+    const pts=[];
+    for(let a=0;a<Math.PI*2;a+=0.12) pts.push({x:cx.x+Math.cos(a)*rx, y:cx.y+Math.sin(a)*ry});
+    return pts;
+  }
+  if(ann.tool==='arrow') return [toOut(ann.x,ann.y), toOut(ann.ex,ann.ey)];
+  if(ann.tool==='label') return [toOut(ann.lx,ann.ly)];
+  return [];
+}
+
+function smooth(pts){
+  if(pts.length<4)return pts;
+  const out=[pts[0]];
+  for(let i=1;i<pts.length;i++){
+    if(Math.hypot(pts[i].x-out[out.length-1].x,pts[i].y-out[out.length-1].y)>3)
+      out.push(pts[i]);
+  }
+  return out;
+}
+
+function strokeSm(ctx,pts,close=false){
+  if(pts.length<2)return;
+  ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y);
+  for(let i=0;i<pts.length-1;i++){
+    const p0=pts[i],p1=pts[(i+1)%pts.length];
+    const pm=pts[(i-1+pts.length)%pts.length],p2=pts[(i+2)%pts.length];
+    ctx.bezierCurveTo(
+      p0.x+(p1.x-pm.x)*0.18, p0.y+(p1.y-pm.y)*0.18,
+      p1.x-(p2.x-p0.x)*0.18, p1.y-(p2.y-p0.y)*0.18,
+      p1.x, p1.y
+    );
+  }
+  if(close) ctx.closePath();
+}
+
+// HUD style — sharp glowing tube, medical device aesthetic
+function renderHUD(ctx,pts,def,sz,closed=false){
+  const r=sz*def.thick;
+  const sm=smooth(pts);
+  if(sm.length<2)return;
+
+  // Outer glow
+  ctx.save(); ctx.strokeStyle=def.glow; ctx.lineWidth=r*3.5;
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  ctx.shadowColor=def.glow; ctx.shadowBlur=r*4;
+  ctx.globalAlpha=0.18; strokeSm(ctx,sm,closed); ctx.stroke(); ctx.restore();
+
+  // Mid glow
+  ctx.save(); ctx.strokeStyle=def.glow; ctx.lineWidth=r*2.2;
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  ctx.shadowColor=def.glow; ctx.shadowBlur=r*2;
+  ctx.globalAlpha=0.35; strokeSm(ctx,sm,closed); ctx.stroke(); ctx.restore();
+
+  // Shadow/depth
+  ctx.save(); ctx.strokeStyle=def.shadow; ctx.lineWidth=r*2.1;
+  ctx.lineCap='round'; ctx.lineJoin='round'; ctx.globalAlpha=0.7;
+  strokeSm(ctx,sm,closed); ctx.stroke(); ctx.restore();
+
+  // Main body
+  ctx.save(); ctx.strokeStyle=def.base; ctx.lineWidth=r*1.9;
+  ctx.lineCap='round'; ctx.lineJoin='round'; ctx.globalAlpha=1;
+  strokeSm(ctx,sm,closed); ctx.stroke(); ctx.restore();
+
+  // Highlight streak
+  ctx.save(); ctx.strokeStyle=def.hi; ctx.lineWidth=r*0.7;
+  ctx.lineCap='round'; ctx.lineJoin='round'; ctx.globalAlpha=0.8;
+  const h1=sm.map(p=>({x:p.x-r*0.3,y:p.y-r*0.3}));
+  strokeSm(ctx,h1,closed); ctx.stroke(); ctx.restore();
+
+  // Fine specular
+  ctx.save(); ctx.strokeStyle=def.hi2; ctx.lineWidth=r*0.22;
+  ctx.lineCap='round'; ctx.globalAlpha=0.55;
+  const h2=sm.map(p=>({x:p.x-r*0.55,y:p.y-r*0.55}));
+  strokeSm(ctx,h2,closed); ctx.stroke(); ctx.restore();
+}
+
+// GLOW style — softer, more painterly
+function renderGlow(ctx,pts,def,sz,closed=false){
+  const r=sz*def.thick;
+  const sm=smooth(pts);
+  if(sm.length<2)return;
+  for(let i=3;i>=0;i--){
+    ctx.save(); ctx.strokeStyle=def.glow;
+    ctx.lineWidth=r*(2+i*1.2); ctx.lineCap='round'; ctx.lineJoin='round';
+    ctx.shadowColor=def.glow; ctx.shadowBlur=r*(3+i*2);
+    ctx.globalAlpha=0.06+i*0.03; strokeSm(ctx,sm,closed); ctx.stroke(); ctx.restore();
+  }
+  ctx.save(); ctx.strokeStyle=def.base; ctx.lineWidth=r*1.8;
+  ctx.lineCap='round'; ctx.lineJoin='round'; ctx.globalAlpha=0.95;
+  strokeSm(ctx,sm,closed); ctx.stroke(); ctx.restore();
+  ctx.save(); ctx.strokeStyle=def.hi; ctx.lineWidth=r*0.6;
+  ctx.lineCap='round'; ctx.globalAlpha=0.75;
+  const h=sm.map(p=>({x:p.x-r*0.28,y:p.y-r*0.28}));
+  strokeSm(ctx,h,closed); ctx.stroke(); ctx.restore();
+}
+
+// ATLAS style — ink-on-paper anatomical
+function renderAtlas(ctx,pts,def,sz,closed=false){
+  const r=sz*def.thick*0.9;
+  const sm=smooth(pts);
+  if(sm.length<2)return;
+  // Shadow
+  ctx.save(); ctx.strokeStyle=def.shadow; ctx.lineWidth=r*2.2;
+  ctx.lineCap='round'; ctx.lineJoin='round'; ctx.globalAlpha=0.4;
+  strokeSm(ctx,sm,closed); ctx.stroke(); ctx.restore();
+  // Body
+  ctx.save(); ctx.strokeStyle=def.base; ctx.lineWidth=r*1.8;
+  ctx.lineCap='round'; ctx.lineJoin='round'; ctx.globalAlpha=0.92;
+  strokeSm(ctx,sm,closed); ctx.stroke(); ctx.restore();
+  // Highlight
+  ctx.save(); ctx.strokeStyle=def.hi; ctx.lineWidth=r*0.65;
+  ctx.lineCap='round'; ctx.globalAlpha=0.65;
+  const h=sm.map(p=>({x:p.x-r*0.25,y:p.y-r*0.25}));
+  strokeSm(ctx,h,closed); ctx.stroke(); ctx.restore();
+  // Texture lines for nerves
+  if(def===SD.nerve&&sm.length>4){
+    ctx.save(); ctx.strokeStyle=def.shadow; ctx.lineWidth=0.8; ctx.globalAlpha=0.4;
+    for(let i=2;i<sm.length-2;i+=4){
+      const dx=sm[i+1].x-sm[i-1].x, dy=sm[i+1].y-sm[i-1].y;
+      const len=Math.hypot(dx,dy)||1;
+      const nx=-dy/len*r*0.7, ny=dx/len*r*0.7;
+      ctx.beginPath(); ctx.moveTo(sm[i].x+nx,sm[i].y+ny);
+      ctx.lineTo(sm[i].x-nx,sm[i].y-ny); ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+
+// MINIMAL — clean thin line with subtle glow
+function renderMinimal(ctx,pts,def,sz,closed=false){
+  const r=sz*def.thick*0.6;
+  const sm=smooth(pts);
+  if(sm.length<2)return;
+  ctx.save(); ctx.strokeStyle=def.glow; ctx.lineWidth=r*1.4;
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  ctx.shadowColor=def.glow; ctx.shadowBlur=r*3;
+  ctx.globalAlpha=0.5; strokeSm(ctx,sm,closed); ctx.stroke(); ctx.restore();
+  ctx.save(); ctx.strokeStyle=def.hi; ctx.lineWidth=r*0.9;
+  ctx.lineCap='round'; ctx.lineJoin='round'; ctx.globalAlpha=0.9;
+  strokeSm(ctx,sm,closed); ctx.stroke(); ctx.restore();
+}
+
+// Sheet renderer for fascia/organ
+function renderSheet(ctx,pts,def,sz){
+  if(pts.length<3)return;
+  const sm=smooth(pts);
+  ctx.save();
+  ctx.beginPath(); strokeSm(ctx,sm,true);
+  ctx.fillStyle=def.base; ctx.globalAlpha=0.12; ctx.fill();
+  // Hatch
+  ctx.save(); ctx.clip();
+  ctx.strokeStyle=def.base; ctx.lineWidth=0.8; ctx.globalAlpha=0.2;
+  const xs=sm.map(p=>p.x), ys=sm.map(p=>p.y);
+  const mnx=Math.min(...xs), mxx=Math.max(...xs);
+  const mny=Math.min(...ys), mxy=Math.max(...ys);
+  for(let d=mnx-(mxy-mny);d<mxx+mxy;d+=12){
+    ctx.beginPath(); ctx.moveTo(d,mny-20); ctx.lineTo(d+(mxy-mny+40),mxy+20); ctx.stroke();
+  }
+  ctx.restore();
+  // Outline
+  ctx.beginPath(); strokeSm(ctx,sm,true);
+  ctx.strokeStyle=def.base; ctx.lineWidth=sz*0.9;
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  ctx.shadowColor=def.glow; ctx.shadowBlur=sz*2;
+  ctx.globalAlpha=0.85; ctx.stroke(); ctx.restore();
+}
+
+function getRenderFn(){
+  if(renderStyle==='hud')     return renderHUD;
+  if(renderStyle==='glow')    return renderGlow;
+  if(renderStyle==='atlas')   return renderAtlas;
+  if(renderStyle==='minimal') return renderMinimal;
+  return renderHUD;
+}
+
+// ═══════════════════════════════════════════
+// LABEL RENDERER — HUD style
+// ═══════════════════════════════════════════
+function renderLabelHUD(ctx,ann,pts,bright,W,H){
+  if(!ann.label||!pts.length) return;
+  const def=SD[ann.type]||SD.artery;
+
+  // Find label anchor point (end of path or specified)
+  let ax,ay;
+  if(ann.tool==='draw'&&pts.length)   { ax=pts[pts.length-1].x; ay=pts[pts.length-1].y; }
+  else if(ann.tool==='ellipse'&&pts.length){ ax=pts[Math.floor(pts.length/4)].x; ay=pts[Math.floor(pts.length/4)].y-10; }
+  else if(ann.tool==='arrow'&&pts.length>1){ ax=pts[pts.length-1].x; ay=pts[pts.length-1].y; }
+  else if(ann.tool==='label')         { ax=toOut(ann.lx,ann.ly).x; ay=toOut(ann.lx,ann.ly).y; }
+  else { ax=pts[0].x; ay=pts[0].y; }
+
+  // Push label away from edges
+  const margin=200;
+  let lx = ax + 40, ly = ay;
+  if(lx > W-margin){ lx = ax - 40; }
+  // Adjust vertically if needed
+  if(ly < 60) ly = 60;
+  if(ly > H-40) ly = H-40;
+
+  const label = ann.label.toUpperCase();
+  ctx.save();
+
+  if(renderStyle==='hud'||renderStyle==='minimal'){
+    // HUD label style
+    ctx.font = 'bold 26px Syne, sans-serif';
+    ctx.letterSpacing='0.06em';
+    const tw = ctx.measureText(label).width;
+
+    // Connector line
+    ctx.strokeStyle=def.hi; ctx.lineWidth=1.2;
+    ctx.globalAlpha=0.6;
+    ctx.setLineDash([4,6]);
+    ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(lx,ly); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Dot at structure
+    ctx.beginPath(); ctx.arc(ax,ay,4,0,Math.PI*2);
+    ctx.fillStyle=def.hi; ctx.globalAlpha=1; ctx.fill();
+
+    // Label text glow
+    ctx.shadowColor=def.glow; ctx.shadowBlur=16;
+    ctx.fillStyle=def.label; ctx.globalAlpha=1;
+    ctx.fillText(label, lx, ly);
+
+    // Underline
+    ctx.save(); ctx.shadowBlur=0; ctx.strokeStyle=def.base;
+    ctx.lineWidth=1.5; ctx.globalAlpha=0.5;
+    ctx.beginPath(); ctx.moveTo(lx,ly+6); ctx.lineTo(lx+tw,ly+6); ctx.stroke();
+    ctx.restore();
+
+  } else if(renderStyle==='atlas'){
+    // Atlas label — serif, smaller
+    ctx.font = 'bold 22px "Crimson Pro", Georgia, serif';
+    const tw=ctx.measureText(label).width;
+    // Leader line
+    ctx.strokeStyle=def.base; ctx.lineWidth=1; ctx.globalAlpha=0.5;
+    ctx.setLineDash([3,6]);
+    ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(lx,ly); ctx.stroke();
+    ctx.setLineDash([]);
+    // White bg
+    ctx.fillStyle='rgba(244,237,220,0.85)';
+    ctx.fillRect(lx-3,ly-20,tw+8,26);
+    // Text
+    ctx.fillStyle=def.base; ctx.globalAlpha=1;
+    ctx.fillText(label,lx,ly);
+    // Underline
+    ctx.strokeStyle=def.base; ctx.lineWidth=0.8; ctx.globalAlpha=0.6;
+    ctx.beginPath(); ctx.moveTo(lx,ly+4); ctx.lineTo(lx+tw,ly+4); ctx.stroke();
+
+  } else if(renderStyle==='glow'){
+    ctx.font = 'bold 26px Syne, sans-serif';
+    ctx.strokeStyle='rgba(0,0,0,0.8)'; ctx.lineWidth=4; ctx.globalAlpha=0.7;
+    ctx.strokeText(label,lx,ly);
+    ctx.shadowColor=def.glow; ctx.shadowBlur=20;
+    ctx.fillStyle=def.label; ctx.globalAlpha=1;
+    ctx.fillText(label,lx,ly);
+    // connector
+    ctx.save(); ctx.strokeStyle=def.hi; ctx.lineWidth=1.5; ctx.globalAlpha=0.5;
+    ctx.setLineDash([3,5]); ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(lx,ly); ctx.stroke();
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════
+// MAIN RENDER — draws to overlay canvas
+// ═══════════════════════════════════════════
+function doRender(){
+  ovX.clearRect(0,0,ovC.width,ovC.height);
+  drX.clearRect(0,0,drC.width,drC.height);
+
+  if(viewMode==='overlay')  renderOverlayMode();
+  if(viewMode==='isolated') renderIsolatedMode();
+  if(viewMode==='side')     renderSideMode();
+}
+
+function renderOverlayMode(){
+  drawPhoto(0.58);
+  const fn=getRenderFn();
+  const W=ovC.width, H=ovC.height;
+  const isAtlas = renderStyle==='atlas';
+
+  // Vignette
+  const vg=ovX.createRadialGradient(W/2,H/2,H*0.2,W/2,H/2,H*0.72);
+  vg.addColorStop(0,'rgba(0,0,0,0)');
+  vg.addColorStop(1,'rgba(0,0,0,0.45)');
+  ovX.fillStyle=vg; ovX.fillRect(0,0,W,H);
+
+  annotations.forEach(a=>{
+    const def=SD[a.type]||SD.artery;
+    const pts=getOutPts(a).map(p=>({x:p.x*scale,y:p.y*scale})); // back to display coords
+    if(!pts.length)return;
+    const isSheet=a.type==='fascia'||a.type==='organ';
+    if(isSheet) renderSheet(ovX,pts,def,a.strokeSz*scale);
+    else        fn(ovX,pts,def,a.strokeSz*scale);
+    renderLabelHUD(ovX,a,pts,false,W,H);
+  });
+}
+
+function renderIsolatedMode(){
+  bgX.clearRect(0,0,bgC.width,bgC.height);
+  const W=ovC.width, H=ovC.height;
+
+  // Background
+  if(isoBg==='black'){
+    ovX.fillStyle='#000000'; ovX.fillRect(0,0,W,H);
+  } else if(isoBg==='warm'){
+    ovX.fillStyle='#ede3cc'; ovX.fillRect(0,0,W,H);
+    for(let i=0;i<2000;i++){const x=Math.random()*W,y=Math.random()*H;ovX.fillStyle='rgba(130,100,60,0.035)';ovX.fillRect(x,y,1,1);}
+    const vg=ovX.createRadialGradient(W/2,H/2,H*0.15,W/2,H/2,H*0.72);
+    vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(60,40,10,0.28)');
+    ovX.fillStyle=vg; ovX.fillRect(0,0,W,H);
+  } else {
+    ovX.fillStyle='#06090e'; ovX.fillRect(0,0,W,H);
+    const vg=ovX.createRadialGradient(W/2,H/2,H*0.1,W/2,H/2,H*0.75);
+    vg.addColorStop(0,'rgba(14,22,36,0)'); vg.addColorStop(1,'rgba(0,0,0,0.6)');
+    ovX.fillStyle=vg; ovX.fillRect(0,0,W,H);
+  }
+
+  const fn=getRenderFn();
+  annotations.forEach(a=>{
+    const def=SD[a.type]||SD.artery;
+    const pts=getOutPts(a).map(p=>({x:p.x*scale,y:p.y*scale}));
+    if(!pts.length)return;
+    const isSheet=a.type==='fascia'||a.type==='organ';
+    if(isSheet) renderSheet(ovX,pts,def,a.strokeSz*scale*1.2);
+    else        fn(ovX,pts,def,a.strokeSz*scale*1.2);
+    renderLabelHUD(ovX,a,pts,true,W,H);
+  });
+
+  // Footer
+  ovX.save();
+  ovX.font='italic 18px "Crimson Pro",Georgia,serif';
+  ovX.fillStyle=isoBg==='warm'?'rgba(100,70,30,0.35)':'rgba(200,200,180,0.2)';
+  ovX.fillText('SurgicalSketch · Anatomical Isolation',24,H-20);
+  ovX.restore();
+}
+
+function renderSideMode(){
+  const W=bgC.width, H=bgC.height, hw=Math.floor(W/2);
+
+  bgX.clearRect(0,0,W,H);
+  if(img){
+    const s=Math.min(hw/img.width,H/img.height)*0.96;
+    const ox=(hw-img.width*s)/2, oy=(H-img.height*s)/2;
+    bgX.globalAlpha=0.68;
+    bgX.drawImage(img,ox,oy,img.width*s,img.height*s);
+    bgX.globalAlpha=1;
+    img._ds=s; img._dox=ox; img._doy=oy;
+  }
+
+  // Left: simple annotations
+  annotations.forEach(a=>annSimple(drX,a,scale));
+
+  // Right: dark bg
+  ovX.fillStyle='#06090e'; ovX.fillRect(hw,0,hw,H);
+  const vg=ovX.createRadialGradient(hw+hw/2,H/2,H*0.05,hw+hw/2,H/2,H*0.65);
+  vg.addColorStop(0,'rgba(14,22,36,0)'); vg.addColorStop(1,'rgba(0,0,0,0.5)');
+  ovX.fillStyle=vg; ovX.fillRect(hw,0,hw,H);
+
+  // Divider
+  ovX.fillStyle='rgba(200,168,74,0.22)'; ovX.fillRect(hw,0,1,H);
+
+  const fn=getRenderFn();
+  const sf=(p)=>({x: hw+(p.x/W)*hw, y: p.y});
+
+  annotations.forEach(a=>{
+    const def=SD[a.type]||SD.artery;
+    const rawPts=getOutPts(a).map(p=>({x:p.x*scale,y:p.y*scale}));
+    const pts=rawPts.map(sf);
+    if(!pts.length)return;
+    const isSheet=a.type==='fascia'||a.type==='organ';
+    if(isSheet) renderSheet(ovX,pts,def,a.strokeSz*scale*1.1);
+    else        fn(ovX,pts,def,a.strokeSz*scale*1.1);
+    renderLabelHUD(ovX,a,pts,true,W,H);
+  });
+
+  // Panel labels
+  ovX.save(); ovX.font='700 11px Syne,sans-serif';
+  ovX.fillStyle='rgba(200,200,180,0.22)'; ovX.letterSpacing='0.18em';
+  ovX.fillText('SURGICAL FRAME', 18, 22);
+  ovX.fillText('ANATOMICAL ISOLATION', hw+18, 22);
+  ovX.restore();
+}
+
+// ═══════════════════════════════════════════
+// 1080p EXPORT — render at full resolution
+// ═══════════════════════════════════════════
+function exportHD(){
+  const off=document.createElement('canvas');
+  off.width=OUT_W; off.height=OUT_H;
+  const ctx=off.getContext('2d');
+
+  // Draw photo at 1080p
+  if(img && viewMode!=='isolated'){
+    const s=Math.min(OUT_W/img.width,OUT_H/img.height);
+    const ox=(OUT_W-img.width*s)/2, oy=(OUT_H-img.height*s)/2;
+    ctx.globalAlpha = viewMode==='overlay'?0.58:0.68;
+    ctx.drawImage(img,ox,oy,img.width*s,img.height*s);
+    ctx.globalAlpha=1;
+  }
+
+  // Isolated bg at 1080p
+  if(viewMode==='isolated'){
+    if(isoBg==='black'){ ctx.fillStyle='#000000'; ctx.fillRect(0,0,OUT_W,OUT_H); }
+    else if(isoBg==='warm'){
+      ctx.fillStyle='#ede3cc'; ctx.fillRect(0,0,OUT_W,OUT_H);
+      const vg=ctx.createRadialGradient(OUT_W/2,OUT_H/2,OUT_H*0.15,OUT_W/2,OUT_H/2,OUT_H*0.72);
+      vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(60,40,10,0.28)');
+      ctx.fillStyle=vg; ctx.fillRect(0,0,OUT_W,OUT_H);
+    } else {
+      ctx.fillStyle='#06090e'; ctx.fillRect(0,0,OUT_W,OUT_H);
+      const vg=ctx.createRadialGradient(OUT_W/2,OUT_H/2,OUT_H*0.1,OUT_W/2,OUT_H/2,OUT_H*0.75);
+      vg.addColorStop(0,'rgba(14,22,36,0)'); vg.addColorStop(1,'rgba(0,0,0,0.6)');
+      ctx.fillStyle=vg; ctx.fillRect(0,0,OUT_W,OUT_H);
+    }
+  }
+
+  if(viewMode==='overlay'){
+    const vg=ctx.createRadialGradient(OUT_W/2,OUT_H/2,OUT_H*0.2,OUT_W/2,OUT_H/2,OUT_H*0.72);
+    vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,0.45)');
+    ctx.fillStyle=vg; ctx.fillRect(0,0,OUT_W,OUT_H);
+  }
+
+  // Render annotations at FULL 1080p resolution
+  const fn=getRenderFn();
+  const mult = viewMode==='isolated'?1.2:1;
+  annotations.forEach(a=>{
+    const def=SD[a.type]||SD.artery;
+    // Use OUT coords directly (no scale factor)
+    let pts=[];
+    if(a.tool==='draw') pts=a.points.map(p=>toOut(p.x,p.y));
+    if(a.tool==='ellipse'){
+      const cx=toOut((a.x+a.ex)/2,(a.y+a.ey)/2);
+      const rx=Math.abs(a.ex-a.x)/2/scale, ry=Math.abs(a.ey-a.y)/2/scale;
+      for(let ag=0;ag<Math.PI*2;ag+=0.08) pts.push({x:cx.x+Math.cos(ag)*rx,y:cx.y+Math.sin(ag)*ry});
+    }
+    if(a.tool==='arrow') pts=[toOut(a.x,a.y),toOut(a.ex,a.ey)];
+    if(!pts.length)return;
+    const isSheet=a.type==='fascia'||a.type==='organ';
+    const outSz=a.strokeSz*mult;
+    if(isSheet) renderSheet(ctx,pts,def,outSz);
+    else        fn(ctx,pts,def,outSz);
+    renderLabelHUD(ctx,a,pts,viewMode!=='overlay',OUT_W,OUT_H);
+  });
+
+  // Branding
+  ctx.save();
+  ctx.font='italic 14px "Crimson Pro",Georgia,serif';
+  ctx.fillStyle='rgba(200,200,180,0.15)';
+  ctx.fillText('SurgicalSketch',OUT_W-130,OUT_H-16);
+  ctx.restore();
+
+  const link=document.createElement('a');
+  link.download='surgicalsketch-1080p-'+Date.now()+'.png';
+  link.href=off.toDataURL('image/png');
+  link.click();
+}
+
+// ═══════════════════════════════════════════
+// CONTROLS
+// ═══════════════════════════════════════════
+const VIEW_IND={
+  overlay:'Overlay Mode — draw, then ▶ Render',
+  isolated:'Isolated View — structures on clean background',
+  side:'Side by Side — surgical frame + anatomical render'
+};
+function setView(v){
+  viewMode=v;
+  document.querySelectorAll('.vbtn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('v-'+v).classList.add('active');
+  if(v==='overlay'){drawPhoto();redrawAnns();ovX.clearRect(0,0,ovC.width,ovC.height);}
+  else doRender();
+}
+function setStyle(s,btn){
+  renderStyle=s;
+  document.querySelectorAll('.stybtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(viewMode!=='overlay') doRender();
+}
+function setBg(v,btn){
+  isoBg=v;
+  document.querySelectorAll('.bgbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(viewMode==='isolated') doRender();
+}
+function setTool(t){
+  tool=t;
+  document.querySelectorAll('.tl').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tl-'+t)?.classList.add('active');
+}
+function setStruct(el){
+  drawColor=el.dataset.color; structType=el.dataset.type;
+  document.querySelectorAll('.sti').forEach(s=>s.classList.remove('active'));
+  el.classList.add('active');
+}
+function setSz(s,btn){
+  strokeSz=s;
+  document.querySelectorAll('.szb').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ═══════════════════════════════════════════
+// ERASE / UNDO / CLEAR
+// ═══════════════════════════════════════════
+function eraseAt(x,y){
+  const r=24;
+  annotations=annotations.filter(a=>{
+    if(a.tool==='draw') return !a.points.some(p=>Math.hypot(p.x-x,p.y-y)<r);
+    if(a.tool==='label') return Math.hypot(a.lx-x,a.ly-y)>r;
+    return Math.hypot(a.x-x,a.y-y)>r;
+  });
+}
+function undoLast(){ annotations.pop(); redrawAnns(); updateList(); }
+function clearAll(){
+  annotations=[];
+  drX.clearRect(0,0,drC.width,drC.height);
+  ovX.clearRect(0,0,ovC.width,ovC.height);
+  if(img) drawPhoto(); updateList();
+}
+
+// ═══════════════════════════════════════════
+// LABEL INPUT
+// ═══════════════════════════════════════════
+function showLabelInput(x,y){
+  const ov=document.getElementById('label-ov'), r=drC.getBoundingClientRect();
+  ov.style.left=(r.left+x+10)+'px'; ov.style.top=(r.top+y-18)+'px';
+  ov.classList.add('vis');
+  const inp=document.getElementById('label-in');
+  inp.value=''; inp.focus(); pendingLabel={lx:x,ly:y};
+}
+function promptRename(ann){
+  renameTarget=ann;
+  const ov=document.getElementById('label-ov'), r=drC.getBoundingClientRect();
+  let tx=ann.x||(ann.points&&ann.points[0].x)||10;
+  let ty=ann.y||(ann.points&&ann.points[0].y)||10;
+  ov.style.left=(r.left+tx+10)+'px'; ov.style.top=(r.top+ty-18)+'px';
+  ov.classList.add('vis');
+  const inp=document.getElementById('label-in');
+  inp.value=ann.label||''; inp.focus(); inp.select();
+}
+document.getElementById('label-in').addEventListener('keydown',e=>{
+  if(e.key==='Enter'){
+    const v=e.target.value.trim();
+    if(pendingLabel){
+      annotations.push({type:structType,color:drawColor,tool:'label',lx:pendingLabel.lx,ly:pendingLabel.ly,strokeSz,label:v||structType});
+      pendingLabel=null;
+    } else if(renameTarget){
+      renameTarget.label=v||renameTarget.type; renameTarget=null;
+    }
+    document.getElementById('label-ov').classList.remove('vis');
+    redrawAnns(); updateList();
+  }
+  if(e.key==='Escape'){
+    pendingLabel=null; renameTarget=null;
+    document.getElementById('label-ov').classList.remove('vis');
+  }
+});
+
+// ═══════════════════════════════════════════
+// ANNOTATION LIST
+// ═══════════════════════════════════════════
+function updateList(){
+  const list=document.getElementById('ann-list'); list.innerHTML='';
+  annotations.forEach((a,i)=>{
+    const d=document.createElement('div'); d.className='ali';
+    d.innerHTML=`<div class="ali-dot" style="background:${a.color}"></div><div class="ali-name">${a.label}</div><div class="ali-del" onclick="delAnn(${i})">×</div>`;
+    list.appendChild(d);
+  });
+}
+function delAnn(i){ annotations.splice(i,1); redrawAnns(); updateList(); }
+
+setupDraw();
+</script>
+</body>
+</html>
